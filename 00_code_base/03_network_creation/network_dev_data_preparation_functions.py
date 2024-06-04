@@ -51,3 +51,11 @@ def replace_nan_with_value(dataframe, column_name, replacement_value):
     """
     dataframe.fillna({column_name: replacement_value}, inplace=True)
     return dataframe
+
+# Function to append the counter to duplicate indices
+def handle_duplicates(index):
+    if occurrence_counter[index] > 1:
+        counter[index] += 1
+        return f"{index}_{counter[index]}"
+    else:
+        return index
