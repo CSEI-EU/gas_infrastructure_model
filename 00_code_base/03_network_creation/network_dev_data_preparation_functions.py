@@ -53,7 +53,7 @@ def replace_nan_with_value(dataframe, column_name, replacement_value):
     return dataframe
 
 # Function to append the counter to duplicate indices
-def handle_duplicates(index):
+def handle_duplicates(index, occurrence_counter, counter):
     if occurrence_counter[index] > 1:
         counter[index] += 1
         return f"{index}_{counter[index]}"
