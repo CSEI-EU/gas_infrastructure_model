@@ -20,18 +20,25 @@ import pandas as pd
 
 def generate_parallel_connections(input_df):
     result_rows = []
+    created_nodes = {}
 
     for _, row in input_df.iterrows():
         source_name = row['source_name']
         target_name = row['target_name']
         occurrences = row['occurrences']
 
-        for i in range(1, occurrences + 1):
+        # Check if the target node has already been created
+        start_index = created_nodes.get(target_name, 0) + 1
+
+        for i in range(start_index, occurrences + start_index):
             new_target = f"{target_name}_{i}"
             result_rows.append({'source_name': source_name, 'target_name': new_target})
 
             # Add a source node targeting the original target node
-            result_rows.append({'source_name': f"{new_target}", 'target_name': target_name})
+            result_rows.append({'source_name': new_target, 'target_name': target_name})
+
+            # Update the created nodes dictionary
+            created_nodes[target_name] = i
 
     result_df = pd.DataFrame(result_rows)
 
