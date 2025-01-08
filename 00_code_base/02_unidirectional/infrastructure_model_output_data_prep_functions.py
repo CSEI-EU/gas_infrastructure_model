@@ -41,6 +41,7 @@ def store_optimization_results(model, commodities, network_edges, excess_edges, 
     
     # Check if the model has an optimal solution
     if model.status == GRB.OPTIMAL:
+        # Loop through the commodities and network edges for results
         for commodity in commodities:
             for edge in network_edges:
                 # Append data to the results list
@@ -50,15 +51,33 @@ def store_optimization_results(model, commodities, network_edges, excess_edges, 
                                      y_new_cap[commodity][edge].x, 
                                      Change[commodity][edge].x, 
                                      z_conv_cap[commodity][edge].x])
-        for edge in excess_edges:    
-            excess_data.append([commodity, 
-                                edge, 
-                                x_flow_excess[commodity][edge].x])
-        for edge in shortage_edges:    
-            shortage_data.append([commodity, 
-                                  edge, 
-                                  x_flow_shortage[commodity][edge].x])
         
+        # Loop through excess_edges and append data to excess_data
+        for edge in excess_edges:    
+            for commodity in commodities:
+                if commodity in x_flow_excess and edge in x_flow_excess[commodity]:
+                    # Only append if there is a valid flow value
+                    flow_value = x_flow_excess[commodity][edge].x
+                    if flow_value > 0:
+                        excess_data.append([commodity, 
+                                            edge, 
+                                            flow_value])
+        
+        # Loop through shortage_edges and append data to shortage_data
+        for edge in shortage_edges:    
+            for commodity in commodities:
+                if commodity in x_flow_shortage and edge in x_flow_shortage[commodity]:
+                    # Only append if there is a valid flow value
+                    flow_value = x_flow_shortage[commodity][edge].x
+                    if flow_value > 0:
+                        shortage_data.append([commodity, 
+                                              edge, 
+                                              flow_value])
+
+        # Print excess and shortage data to debug
+        print("Excess Data:", excess_data)
+        print("Shortage Data:", shortage_data)
+
         # Create DataFrames from the collected data
         results_df = pd.DataFrame(results_data, columns=columns)
         excess_df = pd.DataFrame(excess_data, columns=excess_columns)
@@ -69,6 +88,7 @@ def store_optimization_results(model, commodities, network_edges, excess_edges, 
     else:
         print("No optimal solution found.")
         return None, None, None
+
 
 def filter_commodities_to_dataframe(results_df, commodity_list):
     # Create an empty dictionary to store DataFrames for each commodity
