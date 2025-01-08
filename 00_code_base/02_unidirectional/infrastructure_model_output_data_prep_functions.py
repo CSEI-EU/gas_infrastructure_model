@@ -226,3 +226,22 @@ def calculate_aggregated_capacity(df, capacities_data, countries=[]):
     # Create a new dataframe from the result data
     result_df = pd.DataFrame(result_data)
     return result_df
+
+def filter_rows_by_search_element_and_commodity(df, column_name, search_element, commodity=None):
+    # Filter rows where the search element is found in the specified column (case-insensitive)
+    filtered_df = df[df[column_name].astype(str).str.contains(search_element, case=False, na=False)]
+    
+    # If a commodity is provided, filter further based on the commodity
+    if commodity:
+        filtered_df = filtered_df[filtered_df['Commodity'].str.contains(commodity, case=False, na=False)]
+    
+    # Return the filtered DataFrame
+    return filtered_df
+
+
+def filter_rows_by_search_element(df, column_name, search_element):
+    # Filter rows where the search element is found in the specified column
+    filtered_df = df[df[column_name].astype(str).str.contains(search_element, case=False, na=False)]
+    
+    # Return the filtered DataFrame
+    return filtered_df
