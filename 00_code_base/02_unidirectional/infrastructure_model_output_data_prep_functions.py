@@ -69,3 +69,162 @@ def store_optimization_results(model, commodities, network_edges, excess_edges, 
     else:
         print("No optimal solution found.")
         return None, None, None
+
+def filter_commodities_to_dataframe(results_df, commodity_list):
+    # Create an empty dictionary to store DataFrames for each commodity
+    commodity_dfs = {}
+    
+    # Loop through the commodity list and filter the results_df
+    for commodity in commodity_list:
+        commodity_rows_df = results_df[results_df['Commodity'].str.contains(commodity, case=False)]
+        
+        # Drop unwanted columns for the commodity DataFrame
+        commodity_rows_df = commodity_rows_df.drop(columns=['New Capacity', 'Switched', 'Changed Capacity'])
+        
+        # Store the DataFrame in the dictionary
+        commodity_dfs[commodity] = commodity_rows_df
+    
+    return commodity_dfs
+
+def add_share_column(df, initial_capacities_data):
+    # Function to calculate the share of the use of each infrastructure element
+    def calculate_share(row, initial_capacities_data):
+        commodity = row['Commodity']
+        edge_tuple = row['Edge']
+        edge = ','.join(edge_tuple)  # Convert tuple to string in the format "Source,Destination"
+        flow = row['Flow']
+        
+        # Check if the commodity and edge exist in the initial capacities data
+        if commodity in initial_capacities_data and edge in initial_capacities_data[commodity]:
+            capacity = initial_capacities_data[commodity][edge]
+            # Return the share of the flow relative to the capacity, avoid division by zero
+            return flow / capacity if capacity != 0 else 0
+        return None  # Return None if no matching capacity is found
+
+    # Apply the 'calculate_share' function to each row and create a new 'Share' column
+    df['Share'] = df.apply(calculate_share, axis=1, initial_capacities_data=initial_capacities_data)
+    return df
+
+# Function to calculate aggregated share by type and commodity, excluding specific countries
+def calculate_aggregated_share_supply(df, capacities_data, countries=[]):
+    # Initialize a dictionary to store results
+    result_data = {
+        'Commodity': [],
+        'Type': [],
+        'Total Flow': [],
+        'Total Capacity': [],
+        'Share': []
+    }
+    
+    # Group dataframe by commodity
+    grouped_df = df.groupby('Commodity')
+    
+    # Iterate over each commodity group
+    for commodity, group in grouped_df:
+        # Initialize dictionaries to store total capacities and flows for each type
+        total_capacities = {'LNG': 0, 'Prod': 0, 'St': 0}
+        total_flows = {'LNG': 0, 'Prod': 0, 'St': 0}
+        
+        # Sum capacities from the nested dictionary by type for this commodity, excluding specified countries
+        if commodity in capacities_data:  # Ensure the commodity exists in the dictionary
+            for edge, capacity in capacities_data[commodity].items():
+                edge_parts = edge.split(',')
+                edge_prefix = edge_parts[0]  # Take the part before the comma (e.g., 'BE_LNG')
+                country_code = edge_parts[1]  # Take the country code (e.g., 'BE')
+                if country_code in countries:  # Skip if the country is in the exclusion list
+                    continue
+                parts = edge_prefix.split('_')
+                if len(parts) > 1:  # Ensure there is a type
+                    edge_type = parts[1]
+                    if edge_type in total_capacities:
+                        total_capacities[edge_type] += capacity
+        
+        # Sum flows from the dataframe by type for this commodity, excluding specified countries
+        for _, row in group.iterrows():
+            edge_tuple = row['Edge']
+            edge_prefix = edge_tuple[0]  # Take the first part of the tuple (e.g., 'BE_LNG')
+            country_code = edge_tuple[1]  # Take the country code (e.g., 'BE')
+            if country_code in countries:  # Skip if the country is in the exclusion list
+                continue
+            parts = edge_prefix.split('_')
+            if len(parts) > 1:  # Ensure there is a type
+                edge_type = parts[1]
+                if edge_type in total_flows:
+                    total_flows[edge_type] += row['Flow']
+        
+        # Calculate shares and store results for this commodity
+        for edge_type in total_capacities:
+            total_flow = total_flows[edge_type]
+            total_capacity = total_capacities[edge_type]
+            share = total_flow / total_capacity if total_capacity != 0 else 0
+            result_data['Commodity'].append(commodity)
+            result_data['Type'].append(edge_type)
+            result_data['Total Flow'].append(total_flow)
+            result_data['Total Capacity'].append(total_capacity)
+            result_data['Share'].append(share)
+    
+    # Create a new dataframe from the result data
+    result_df = pd.DataFrame(result_data)
+    return result_df
+
+# Function to calculate aggregated share by type and commodity, excluding specific countries
+def calculate_aggregated_capacity(df, capacities_data, countries=[]):
+    # Initialize a dictionary to store results
+    result_data = {
+        'Commodity': [],
+        'Type': [],
+        'Total Flow': [],
+        'Total Capacity': [],
+        'Share': []
+    }
+    
+    # Group dataframe by commodity
+    grouped_df = df.groupby('Commodity')
+    
+    # Iterate over each commodity group
+    for commodity, group in grouped_df:
+        # Initialize dictionaries to store total capacities and flows for each type
+        total_capacities = {'LNG': 0, 'Prod': 0, 'St': 0}
+        total_flows = {'LNG': 0, 'Prod': 0, 'St': 0}
+        
+        # Sum capacities from the nested dictionary by type for this commodity, excluding specified countries
+        if commodity in capacities_data:  # Ensure the commodity exists in the dictionary
+            for edge, capacity in capacities_data[commodity].items():
+                edge_parts = edge.split(',')
+                edge_prefix = edge_parts[0]  # Take the part before the comma (e.g., 'BE_LNG')
+                country_code = edge_parts[1]  # Take the country code (e.g., 'BE')
+                if country_code in countries:  # Skip if the country is in the exclusion list
+                    continue
+                parts = edge_prefix.split('_')
+                if len(parts) > 1:  # Ensure there is a type
+                    edge_type = parts[1]
+                    if edge_type in total_capacities:
+                        total_capacities[edge_type] += capacity
+        
+        # Sum flows from the dataframe by type for this commodity, excluding specified countries
+        for _, row in group.iterrows():
+            edge_tuple = row['Edge']
+            edge_prefix = edge_tuple[0]  # Take the first part of the tuple (e.g., 'BE_LNG')
+            country_code = edge_tuple[1]  # Take the country code (e.g., 'BE')
+            if country_code in countries:  # Skip if the country is in the exclusion list
+                continue
+            parts = edge_prefix.split('_')
+            if len(parts) > 1:  # Ensure there is a type
+                edge_type = parts[1]
+                if edge_type in total_flows:
+                    total_flows[edge_type] += row['Flow']
+        
+        # Calculate shares and store results for this commodity
+        for edge_type in total_capacities:
+            total_flow = total_flows[edge_type]
+            total_capacity = total_capacities[edge_type]
+            share = total_flow / total_capacity if total_capacity != 0 else 0
+            result_data['Commodity'].append(commodity)
+            result_data['Type'].append(edge_type)
+            result_data['Total Flow'].append(total_flow)
+            result_data['Total Capacity'].append(total_capacity)
+            result_data['Share'].append(share)
+    
+    # Create a new dataframe from the result data
+    result_df = pd.DataFrame(result_data)
+    return result_df
