@@ -95,3 +95,45 @@ def create_excess_nodes_for_supply(node_values, commodities, methane_value=0, hy
     # Returning the components individually
     return excess_list, excess_edges_list, excess_capacity_dict, excess_cost_dict
 
+def check_graph_connectivity(edges):
+    # Create a graph and add edges
+    G = nx.Graph()
+    G.add_edges_from(edges)
+    
+    # Check if the graph is connected
+    if nx.is_connected(G):
+        print("The graph is connected.")
+    else:
+        print("The graph is not connected.")
+
+
+def check_graph_connectivity_and_components(edges):
+    # Create a graph and add edges
+    G = nx.Graph()
+    G.add_edges_from(edges)
+    
+    # Get connected components
+    connected_components = list(nx.connected_components(G))
+    
+    # Check if the graph is connected
+    if len(connected_components) == 1:
+        print("The graph is connected.")
+    else:
+        print("The graph is not connected.")
+        print("Connected components:")
+        for i, component in enumerate(connected_components):
+            print(f"Component {i+1}: {component}")
+
+def check_if_all_nodes_connected(network_nodes, edges):
+    # Create a graph and add edges
+    G = nx.Graph()
+    G.add_edges_from(edges)
+    
+    # Get connected components
+    connected_components = list(nx.connected_components(G))
+    
+    # Check if all nodes are in one connected component
+    if any(set(network_nodes) == component for component in connected_components):
+        print("All nodes are connected.")
+    else:
+        print("Not all nodes are connected.")
