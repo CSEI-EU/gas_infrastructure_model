@@ -199,4 +199,4 @@ def create_initial_capacities_separator_dict(df_parameter):
         # Assign the initial capacity to the corresponding edge
         initial_capacities_data[commodity][edge] = initial_capacity
 
-    return initial_capacities_data_separator
+    return initial_capacities_data

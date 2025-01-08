@@ -106,13 +106,13 @@ def add_share_column(df, initial_capacities_data):
     return df
 
 # Function to calculate aggregated share by type and commodity, excluding specific countries
-def calculate_aggregated_share_supply(df, capacities_data, countries=[]):
+def calculate_aggregated_share_supply(df, node_values, countries=[]):
     # Initialize a dictionary to store results
     result_data = {
         'Commodity': [],
         'Type': [],
         'Total Flow': [],
-        'Total Capacity': [],
+        'Total Potential Supply': [],
         'Share': []
     }
     
@@ -125,42 +125,40 @@ def calculate_aggregated_share_supply(df, capacities_data, countries=[]):
         total_capacities = {'LNG': 0, 'Prod': 0, 'St': 0}
         total_flows = {'LNG': 0, 'Prod': 0, 'St': 0}
         
-        # Sum capacities from the nested dictionary by type for this commodity, excluding specified countries
-        if commodity in capacities_data:  # Ensure the commodity exists in the dictionary
-            for edge, capacity in capacities_data[commodity].items():
-                edge_parts = edge.split(',')
-                edge_prefix = edge_parts[0]  # Take the part before the comma (e.g., 'BE_LNG')
-                country_code = edge_parts[1]  # Take the country code (e.g., 'BE')
-                if country_code in countries:  # Skip if the country is in the exclusion list
-                    continue
-                parts = edge_prefix.split('_')
+        # Sum capacities from the node_values dictionary by type for this commodity, excluding specified countries
+        if commodity in node_values:  # Ensure the commodity exists in the dictionary
+            for node, capacity in node_values[commodity].items():
+                parts = node.split('_')
                 if len(parts) > 1:  # Ensure there is a type
-                    edge_type = parts[1]
-                    if edge_type in total_capacities:
-                        total_capacities[edge_type] += capacity
+                    country_code = parts[0]  # Extract country code (e.g., 'BE')
+                    node_type = parts[1]     # Extract type (e.g., 'LNG', 'Prod')
+                    if country_code in countries:  # Skip if the country is in the exclusion list
+                        continue
+                    if node_type in total_capacities:
+                        total_capacities[node_type] += capacity
         
         # Sum flows from the dataframe by type for this commodity, excluding specified countries
         for _, row in group.iterrows():
             edge_tuple = row['Edge']
-            edge_prefix = edge_tuple[0]  # Take the first part of the tuple (e.g., 'BE_LNG')
+            node_name = edge_tuple[0]  # Take the first part of the tuple (e.g., 'BE_LNG')
             country_code = edge_tuple[1]  # Take the country code (e.g., 'BE')
             if country_code in countries:  # Skip if the country is in the exclusion list
                 continue
-            parts = edge_prefix.split('_')
+            parts = node_name.split('_')
             if len(parts) > 1:  # Ensure there is a type
-                edge_type = parts[1]
-                if edge_type in total_flows:
-                    total_flows[edge_type] += row['Flow']
+                node_type = parts[1]
+                if node_type in total_flows:
+                    total_flows[node_type] += row['Flow']
         
         # Calculate shares and store results for this commodity
-        for edge_type in total_capacities:
-            total_flow = total_flows[edge_type]
-            total_capacity = total_capacities[edge_type]
-            share = total_flow / total_capacity if total_capacity != 0 else 0
+        for node_type in total_capacities:
+            total_flow = total_flows[node_type]
+            total_potential_supply = total_capacities[node_type]
+            share = total_flow / total_potential_supply if total_potential_supply != 0 else 0
             result_data['Commodity'].append(commodity)
-            result_data['Type'].append(edge_type)
+            result_data['Type'].append(node_type)
             result_data['Total Flow'].append(total_flow)
-            result_data['Total Capacity'].append(total_capacity)
+            result_data['Total Potential Supply'].append(total_potential_supply)
             result_data['Share'].append(share)
     
     # Create a new dataframe from the result data
