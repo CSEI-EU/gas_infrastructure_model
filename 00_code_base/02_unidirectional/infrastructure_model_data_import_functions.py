@@ -177,3 +177,26 @@ def extract_network_data(df_nodes, df_commodities, df_edges, df_parameter, df_su
         max_capacities, edge_cost, pipe_new_cost, pipe_conv_cost, 
         pipe_conv_factor, supply_values, node_values
         )
+
+def create_initial_capacities_separator_dict(df_parameter):
+    # Create a nested dictionary for initial capacities with edges separated by commas
+    initial_capacities_data = {}
+
+    # Iterate over the rows of the DataFrame
+    for index, row in df_parameter.iterrows():
+        commodity = row['Commodity']
+        source = row['Source']
+        destination = row['Destination']
+        initial_capacity = row['initial_capacities']
+
+        # Define the edge as a string with source and destination
+        edge = f"{source},{destination}"
+
+        # Check if the commodity already exists in the dictionary, if not, initialize it
+        if commodity not in initial_capacities_data:
+            initial_capacities_data[commodity] = {}
+
+        # Assign the initial capacity to the corresponding edge
+        initial_capacities_data[commodity][edge] = initial_capacity
+
+    return initial_capacities_data_separator
