@@ -74,10 +74,6 @@ def store_optimization_results(model, commodities, network_edges, excess_edges, 
                                               edge, 
                                               flow_value])
 
-        # Print excess and shortage data to debug
-        print("Excess Data:", excess_data)
-        print("Shortage Data:", shortage_data)
-
         # Create DataFrames from the collected data
         results_df = pd.DataFrame(results_data, columns=columns)
         excess_df = pd.DataFrame(excess_data, columns=excess_columns)
@@ -125,7 +121,6 @@ def add_share_column(df, initial_capacities_data):
     df['Share'] = df.apply(calculate_share, axis=1, initial_capacities_data=initial_capacities_data)
     return df
 
-# Function to calculate aggregated share by type and commodity, excluding specific countries
 def calculate_aggregated_share_supply(df, node_values, countries=[]):
     # Initialize a dictionary to store results
     result_data = {
@@ -150,8 +145,8 @@ def calculate_aggregated_share_supply(df, node_values, countries=[]):
             for node, capacity in node_values[commodity].items():
                 parts = node.split('_')
                 if len(parts) > 1:  # Ensure there is a type
-                    country_code = parts[0]  # Extract country code (e.g., 'BE')
-                    node_type = parts[1]     # Extract type (e.g., 'LNG', 'Prod')
+                    country_code = parts[0].strip()  # Extract country code (e.g., 'BE')
+                    node_type = parts[1].strip()     # Extract type (e.g., 'LNG', 'Prod')
                     if country_code in countries:  # Skip if the country is in the exclusion list
                         continue
                     if node_type in total_capacities:
@@ -161,12 +156,12 @@ def calculate_aggregated_share_supply(df, node_values, countries=[]):
         for _, row in group.iterrows():
             edge_tuple = row['Edge']
             node_name = edge_tuple[0]  # Take the first part of the tuple (e.g., 'BE_LNG')
-            country_code = edge_tuple[1]  # Take the country code (e.g., 'BE')
+            country_code = edge_tuple[1].strip()  # Take the country code (e.g., 'BE')
             if country_code in countries:  # Skip if the country is in the exclusion list
                 continue
             parts = node_name.split('_')
             if len(parts) > 1:  # Ensure there is a type
-                node_type = parts[1]
+                node_type = parts[1].strip()
                 if node_type in total_flows:
                     total_flows[node_type] += row['Flow']
         
@@ -184,6 +179,7 @@ def calculate_aggregated_share_supply(df, node_values, countries=[]):
     # Create a new dataframe from the result data
     result_df = pd.DataFrame(result_data)
     return result_df
+
 
 # Function to calculate aggregated share by type and commodity, excluding specific countries
 def calculate_aggregated_capacity(df, capacities_data, countries=[]):
