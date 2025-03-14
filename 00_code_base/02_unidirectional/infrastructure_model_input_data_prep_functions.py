@@ -137,3 +137,13 @@ def check_if_all_nodes_connected(network_nodes, edges):
         print("All nodes are connected.")
     else:
         print("Not all nodes are connected.")
+        
+        # Find nodes that are not connected
+        connected_nodes = set(node for component in connected_components for node in component)
+        not_connected_nodes = set(network_nodes) - connected_nodes
+        
+        # Print the nodes that are not connected
+        if not_connected_nodes:
+            print("Not connected nodes:", not_connected_nodes)
+        else:
+            print("All nodes are connected.")
