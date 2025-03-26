@@ -19,45 +19,38 @@ import networkx as nx
 
 #define function
 
-def create_slack_nodes_and_links(node_values, commodities, methane_value=10000000, hydrogen_value=10000000):
-    # Create a new dictionary for positive values
-    positive_values_dict = {}
+def create_slack_nodes_and_links(node_values, commodities, methane_value=100000000, hydrogen_value=100000000):
+    # Extract all unique node names from node_values (across all commodities)
+    all_nodes = set()
+    for commodity in node_values.values():
+        all_nodes.update(commodity.keys())
 
-    # Iterate through the outer dictionary
-    for node, values in node_values.items():
-        # Filter out positive values from the inner dictionary
-        positive_values = {key: value for key, value in values.items() if value > 0}
+    # Filter nodes that contain "_Prod"
+    prod_nodes = [node for node in all_nodes if "_Prod" in node]
 
-        # Check if there are positive values before adding to the new dictionary
-        if positive_values:
-            positive_values_dict[node] = positive_values
+    # Create a list with names "shortage_" followed by each _Prod node
+    shortage_list = [f'shortage_{node}' for node in prod_nodes]
 
-    # Get all keys from the inner dictionaries
-    all_keys = [key for values in positive_values_dict.values() for key in values.keys()]
-
-    # Remove duplicates to get unique keys
-    unique_keys = list(set(all_keys))
-
-    # Create a list with names "shortage_" followed by each key
-    shortage_list = [f'shortage_{key}' for key in unique_keys]
-
-    # Create shortage edges list, linking shortage nodes to supply nodes
-    shortage_edges_list = [(key, shortage) for key, shortage in zip(shortage_list, unique_keys)]
+    # **Fix: Flip the direction of edges so that shortage nodes connect to _Prod nodes**
+    shortage_edges_list = [(shortage, node) for node, shortage in zip(prod_nodes, shortage_list)]
 
     # Create a dictionary for capacities of shortage nodes (with infinite capacity represented by a high value)
-    shortage_capacity_dict = {commodity: {f'{key}{shortage}': 10000000 for key, shortage in zip(shortage_list, unique_keys)} 
-                              for commodity in commodities}
-
-    # Create a dictionary for cost of shortage nodes (with a high cost for infinite capacity)
-    shortage_cost_dict = {
-        'Methane': {f'{key}{shortage}': methane_value for key, shortage in zip(shortage_list, unique_keys)},
-        'Hydrogen': {f'{key}{shortage}': hydrogen_value for key, shortage in zip(shortage_list, unique_keys)}
+    shortage_capacity_dict = {
+        commodity: {f'{shortage}{node}': 100000000 for node, shortage in zip(prod_nodes, shortage_list)}
+        for commodity in commodities
     }
 
-    # Returning the components individually
+    # Create a dictionary for cost of shortage nodes
+    shortage_cost_dict = {
+        'Methane': {f'{shortage}{node}': methane_value for node, shortage in zip(prod_nodes, shortage_list)},
+        'Hydrogen': {f'{shortage}{node}': hydrogen_value for node, shortage in zip(prod_nodes, shortage_list)}
+    }
+
+    # Return the components
     return shortage_list, shortage_edges_list, shortage_capacity_dict, shortage_cost_dict
 
-def create_excess_nodes_for_supply(node_values, commodities, methane_value=0, hydrogen_value=10000000):
+
+def create_excess_nodes_for_supply(node_values, commodities, methane_value=0, hydrogen_value=100000000):
     # Create a new dictionary for positive values (representing supply)
     positive_values_dict = {}
 
@@ -82,7 +75,7 @@ def create_excess_nodes_for_supply(node_values, commodities, methane_value=0, hy
 
     # Create a dictionary for excess node capacities (infinite capacity with a high value, e.g., 10000)
     excess_capacity_dict = {
-        commodity: {f'{excess}{key}': 1000000 for key, excess in zip(excess_list, unique_keys)}
+        commodity: {f'{excess}{key}': 10000000 for key, excess in zip(excess_list, unique_keys)}
         for commodity in commodities
     }
 
