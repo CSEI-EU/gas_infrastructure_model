@@ -102,6 +102,7 @@ def filter_commodities_to_dataframe(results_df, commodity_list):
     
     return commodity_dfs
 
+#@mathilde - might not work
 def add_share_column(df, initial_capacities_data):
     # Function to calculate the share of the use of each infrastructure element
     def calculate_share(row, initial_capacities_data):
@@ -121,6 +122,7 @@ def add_share_column(df, initial_capacities_data):
     df['Share'] = df.apply(calculate_share, axis=1, initial_capacities_data=initial_capacities_data)
     return df
 
+#@mathilde - does not work for sure
 def calculate_aggregated_share_supply(df, node_values, countries=[]):
     # Initialize a dictionary to store results
     result_data = {
@@ -180,7 +182,7 @@ def calculate_aggregated_share_supply(df, node_values, countries=[]):
     result_df = pd.DataFrame(result_data)
     return result_df
 
-
+#@mathilde - does not work for sure
 # Function to calculate aggregated share by type and commodity, excluding specific countries
 def calculate_aggregated_capacity(df, capacities_data, countries=[]):
     # Initialize a dictionary to store results
