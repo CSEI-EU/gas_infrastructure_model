@@ -75,7 +75,7 @@ def create_excess_nodes_for_supply(node_values, commodities, methane_value=0, hy
 
     # Create a dictionary for excess node capacities (infinite capacity with a high value, e.g., 10000)
     excess_capacity_dict = {
-        commodity: {f'{excess}{key}': 10000000 for key, excess in zip(excess_list, unique_keys)}
+        commodity: {f'{excess}{key}': 100000000 for key, excess in zip(excess_list, unique_keys)}
         for commodity in commodities
     }
 
