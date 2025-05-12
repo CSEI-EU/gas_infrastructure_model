@@ -52,6 +52,7 @@ def plotly_pie_charts(df1, df2, flow_column, year1, year2):
 # Separate the Edge column to have which countries is source and which is destination 
 def parse_edges(df):
     df = df.copy()
+    
     # Split the edges into source and target
     df['Edge'] = df['Edge'].str.strip('()"')  # remove quotes and parentheses
     df[['From', 'To']] = df['Edge'].str.split(', ', expand=True)
@@ -62,24 +63,44 @@ def parse_edges(df):
     
     return df
 
+# Differentiate each type of edges
+def label_node_type(label):
+    if '_LNG_exp' in label:
+        return 'LNG_export'
+    elif '_LNG_imp' in label:
+        return 'LNG_import'
+    elif '_Prod' in label:
+        return 'prod'
+    else:
+        return '-'
+    
 
 # Extract only the country code 
 def extract_country_code(label):
-    if '_LNG_' in label:
+    if '_' in label:
         return label.split('_')[0]  # "USA_LNG_exp" just takes the "USA"
     else:
         return label
     
-# Define the list of countries we want in the map 
+    
+# Define the list of countries we want in the map, separate source and destination countries 
 def interesting_countries(code):
-    countries_chosen = ['AL', 'AD', 'AM', 'AT', 'AZ', 'BY', 'BE', 'BA', 'BG', 'CH', 'CY', 'CZ',
+    return code in [
+        'AL', 'AD', 'AM', 'AT', 'AZ', 'BY', 'BE', 'BA', 'BG', 'CH', 'CY', 'CZ',
         'DE', 'DK', 'DZ', 'EE', 'ES', 'FI', 'FR', 'GB', 'GE', 'GR', 'HR', 'HU', 'IE',
         'IS', 'IT', 'KZ', 'LI', 'LT', 'LU', 'LV', 'MA','MC', 'MD', 'ME', 'MK', 'MT',
         'NL', 'NO', 'PL', 'PT', 'RO', 'RS', 'RU', 'SE', 'SI', 'SK', 'SM', 'SU', 'TR',
         'UA', 'VA', 'XK'
-        ]
-    return code in countries_chosen
+    ]
 
+def european_countries(code):
+    return code in [
+        'AL', 'AD', 'AM', 'AT', 'AZ', 'BY', 'BE', 'BA', 'BG', 'CH', 'CY', 'CZ',
+        'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GB', 'GE', 'GR', 'HR', 'HU', 'IE',
+        'IS', 'IT', 'LI', 'LT', 'LU', 'LV', 'MC', 'MD', 'ME', 'MK', 'MT',
+        'NL', 'NO', 'PL', 'PT', 'RO', 'RS', 'RU', 'SE', 'SI', 'SK', 'SM', 'TR',
+        'UA', 'VA', 'XK'
+    ]
 
 # Calculate the final capacity with and without investment 
 def add_capacity_column(df, file_path):
@@ -87,13 +108,10 @@ def add_capacity_column(df, file_path):
     file_name = os.path.basename(file_path)
 
     # When there is no investment, we only look at normal capacity
-    if "no_invest" in file_name:
-        df['Capacity'] = df['Changed Capacity']
-
-    # When there is investment, we add the new capacity 
-    else: 
+    if "inv" in file_name:
         df['Capacity'] = df['Changed Capacity'].fillna(0) + df['New Capacity'].fillna(0)
-
+    else:
+        df['Capacity'] = df['Changed Capacity']
     return df
 
 
@@ -110,16 +128,13 @@ def add_share_column(df):
     df['Share'] = df.apply(calculate_share, axis=1)
     return df
 
-# Automatiwe the country specific location by using pycountry library
-def get_country_coordinates_pycountry(country_code, geolocator):
-    try:
-        location = geolocator.geocode(country_code, timeout=10)
-        time.sleep(1)  # avoid rate-limiting
-        if location:
-            return (location.latitude, location.longitude)
-    except:
-        print(f"Failed to get coordinates for {country_code}")
-    return (None, None)
+
+# Function to read locations of port according to year
+def filter_lng_ports_by_year(file_path, years):
+    lng_ports = pd.read_excel(file_path)
+    lng_ports_filtered = lng_ports[lng_ports['Model Year'].isin(years)]
+    
+    return lng_ports_filtered
 
 # Manually write the country coordinates
 COUNTRY_COORDINATES = {
@@ -167,31 +182,30 @@ COUNTRY_COORDINATES = {
     'PT': (39.3999, -8.2245),
     'RO': (45.9432, 24.9668),
     'RS': (44.0165, 21.0059),
-    'RU': (55.0, 40.0),  # shifted westward for map clarity
+    'RU': (55.0, 40.0),  
     'SE': (60.1282, 18.6435),
     'SI': (46.1512, 14.9955),
     'SK': (48.6690, 19.6990),
     'SM': (43.9333, 12.4500),
-    'SU': (55.0, 38.0),  # similar to RU for legacy data
+    'SU': (55.0, 38.0),  
     'TR': (39.0, 35.0),
     'UA': (48.3794, 31.1656),
     'VA': (41.9029, 12.4534),
     'XK': (42.6026, 20.9020),
 }
 
-def get_country_coordinates(country_code, geolocator=None):
+def get_country_coordinates(country_code):
     return COUNTRY_COORDINATES.get(country_code, (None, None))
 
-
 # Then add the coordinates to the dataframe for the plot
-def add_coordinates(df, geolocator=None):
+def add_coordinates(df):
     df = df.copy()
 
     countries = set(df['From'].tolist() + df['To'].tolist())
     coord_map = {}
 
     for code in countries:
-        lat, lon = get_country_coordinates(code, geolocator)
+        lat, lon = get_country_coordinates(code)
         coord_map[code] = {'lat': lat, 'lon': lon}
 
     df['Source_lat'] = df['From'].apply(lambda x: coord_map[x]['lat'])
@@ -202,12 +216,76 @@ def add_coordinates(df, geolocator=None):
     return df
 
 
-def plot_flow_map(df, title):
+
+# Points for the LNG import per country 
+LNG_IMPORT_COORDS = {
+    'BE': (50.75, 4.0),
+    'HR': (43.8, 16.0),
+    'FI': (63.0, 26.0),
+    'FR': (45.5, 2.0),
+    'DE': (51.0, 10.0),
+    'GR': (39.0, 21.5),
+    'IT': (42.5, 13.5),
+    'LT': (55.8, 23.7),
+    'NL': (52.4, 5.0),
+    'PL': (51, 21),
+    'PT': (40.0, -8.0),
+    'ES': (40, -2.0),
+    'GB': (52.0, -2.5),
+    'NO': (61.0, 10.0),
+}
+
+def get_lng_import_aggregates(df):
+    df = df.copy()
+
+    # Filter rows where either side is LNG import
+    lng_imp_rows = df[(df['FromType'] == 'LNG_import') | (df['ToType'] == 'LNG_import')]
+
+    # Extract country code 
+    def get_lng_import_country(row):
+        if row['FromType'] == 'LNG_import':
+            return row['From']
+        elif row['ToType'] == 'LNG_import':
+            return row['To']
+        return None
+
+    lng_imp_rows['Country'] = lng_imp_rows.apply(get_lng_import_country, axis=1)
+    lng_imp_rows = lng_imp_rows.dropna(subset=['Country'])
+
+
+    # Aggregate by country: total capacity and weighted average share
+    agg = lng_imp_rows.groupby('Country').agg(
+        TotalCapacity=('Capacity', 'sum'),
+        WeightedFlow=('Flow', 'sum')
+    ).reset_index()
+    agg['Share'] = agg['WeightedFlow'] / agg['TotalCapacity']
+    
+    return agg
+
+
+
+# Color code for pipelines and LNG shares 
+def flow_color(share):
+    if share <= 0.0:
+        return 'rgba(180, 180, 180, 0.4)'  # 0-flow: gray
+    elif share < 0.5:
+        return 'rgba(0, 128, 0, 0.8)'      # Green: low usage
+    elif share < 0.75:
+        return 'rgba(255, 165, 0, 0.8)'    # Orange: medium usage
+    elif share <= 1.0:
+        return 'rgba(255, 0, 0, 0.8)'      # Red: high usage
+
+
+# Final plot of the map 
+def plot_flow_map(df, ports, title):
     fig = go.Figure()
 
-    for _, row in df.iterrows():
-        if row['Flow'] == 0:
-            continue  # Skip zero flows
+    # First plot the pipeline flows
+    df_pipelines = df[(df['FromType'] == '-') & (df['ToType'] == '-')]
+
+    for _, row in df_pipelines.iterrows():
+        line_color = flow_color(row['Share'])
+        line_width = max(row['Flow'] / 100000, 1.1) if row['Flow'] > 0 else 1
 
         fig.add_trace(go.Scattergeo(
             locationmode='country names',
@@ -215,20 +293,96 @@ def plot_flow_map(df, title):
             lat=[row['Source_lat'], row['Target_lat']],
             mode='lines',
             line=dict(
-                width=max(row['Flow'] / 100000, 1.1),
-                color=f"rgba({int(255 * row['Share'])}, 50, 50, 0.6)"
+                width=line_width,
+                color=line_color,
             ),
             hoverinfo='skip',
+            showlegend=False,  # Do not show these in the legend
         ))
+
+    # Port names
+    fig.add_trace(go.Scattergeo(
+        locationmode='country names',
+        lon=ports['Longitude'],
+        lat=ports['Latitude'],
+        mode='markers',
+        marker=dict(
+            size=5,  # Small size
+            color='black',
+            symbol='circle',
+        ),
+        name='Ports',  # Name for legend
+        hoverinfo='text',  # Display port name on hover
+        text=ports['Name of \ninstallation'],  # Port names on hover
+        showlegend=True,
+    ))
+
+    # Add LNG import points
+    for country, (lat, lon) in LNG_IMPORT_COORDS.items():
+        fig.add_trace(go.Scattergeo(
+            lon=[lon],
+            lat=[lat],
+            mode='markers',
+            marker=dict(
+                size=5,  # Default small size
+                color='blue',  # Temporary color
+                symbol='circle',
+                line=dict(width=0.5, color='black')
+            ),
+            name=f'{country} LNG Import',
+            hoverinfo='text',
+            text=f'{country}',  # Country code on hover
+            showlegend=False
+        ))
+
+    # Add traces for legend only
+    legend_items = [
+        ('No-flow', 'rgba(180, 180, 180, 0.4)'),
+        ('Low usage', 'rgba(0, 128, 0, 0.8)'),
+        ('Medium usage', 'rgba(255, 165, 0, 0.8)'),
+        ('High usage', 'rgba(255, 0, 0, 0.8)'),
+    ]
+
+    for label, color in legend_items:
+        fig.add_trace(go.Scattergeo(
+            lon=[None],  # No data to plot
+            lat=[None],
+            mode='lines',
+            line=dict(
+                width=1,
+                color=color,
+            ),
+            name=label,
+            showlegend=True,
+        ))
+
 
     fig.update_layout(
         title=title,
-        showlegend=False,
         geo=dict(
-            scope='europe',
+            scope='world',  # full world, but we control view
             projection_type='natural earth',
             showland=True,
-            countrycolor='rgb(204, 204, 204)',
+            landcolor='rgb(220, 230, 250)',
+            showcountries=True,                 # Shows borders even internal
+            countrycolor='rgb(180, 200, 230)',
+            showcoastlines=True,
+            coastlinecolor='rgb(160, 180, 220)',
+            center=dict(lat=50, lon=20),  # Europe-focused
+            lataxis=dict(range=[30, 65]),  # N Africa to N Europe
+            lonaxis=dict(range=[-20, 40]), # W Europe to Central Asia
+        ),
+        width=900,
+        height=650,
+        legend=dict(
+            x=0.96,  
+            y=1.0,  
+            xanchor='right',
+            yanchor='top',
+            bgcolor='rgba(255, 255, 255, 0.8)',
+            bordercolor='rgba(0, 0, 0, 0.8)',
+            borderwidth=1,
         )
     )
+
     fig.show()
