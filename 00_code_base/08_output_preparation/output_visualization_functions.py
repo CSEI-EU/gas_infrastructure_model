@@ -279,6 +279,7 @@ def flow_color(share):
 
 #@Mathilde: I don't know if this is working, but this way we could have a colour gradient to indicate the use
 #with a seamless colour scale
+#or use colour bars (Flora used seaborn with matplotlib)
 '''
 def flow_color(share):
     if share <= 0.0:
