@@ -1,5 +1,6 @@
 # import packages
 import pandas as pd
+import numpy as np
 import os
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
@@ -89,18 +90,18 @@ def extract_country_code(label):
 def interesting_countries(code):
     return code in [
         'AL', 'AD', 'AM', 'AT', 'AZ', 'BY', 'BE', 'BA', 'BG', 'CH', 'CY', 'CZ',
-        'DE', 'DK', 'DZ', 'EE', 'ES', 'FI', 'FR', 'GB', 'GE', 'GR', 'HR', 'HU', 'IE',
-        'IS', 'IT', 'KZ', 'LI', 'LT', 'LU', 'LV', 'MA','MC', 'MD', 'ME', 'MK', 'MT',
-        'NL', 'NO', 'PL', 'PT', 'RO', 'RS', 'RU', 'SE', 'SI', 'SK', 'SM', 'SU', 'TR',
+        'DE', 'DK', 'DZ', 'EE', 'ES', 'FI', 'FR', 'UK', 'GE', 'EL', 'HR', 'HU', 'IE',
+        'IS', 'IT', 'KZ', 'LI', 'LT', 'LU', 'LY', 'LV', 'MA','MC', 'MD', 'ME', 'MK', 'MT',
+        'NL', 'NO', 'PL', 'PT', 'RO', 'RS', 'RU', 'SD', 'SE', 'SI', 'SK', 'SM', 'SU', 'TN', 
         'UA', 'VA', 'XK'
     ]
 
 def european_countries(code):
     return code in [
         'AL', 'AD', 'AM', 'AT', 'AZ', 'BY', 'BE', 'BA', 'BG', 'CH', 'CY', 'CZ',
-        'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GB', 'GE', 'GR', 'HR', 'HU', 'IE',
+        'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'UK', 'GE', 'EL', 'HR', 'HU', 'IE',
         'IS', 'IT', 'LI', 'LT', 'LU', 'LV', 'MC', 'MD', 'ME', 'MK', 'MT',
-        'NL', 'NO', 'PL', 'PT', 'RO', 'RS', 'RU', 'SE', 'SI', 'SK', 'SM', 'TR',
+        'NL', 'NO', 'PL', 'PT', 'RO', 'RS', 'SE', 'SI', 'SK', 'SM', 'TR',
         'UA', 'VA', 'XK'
     ]
 
@@ -111,9 +112,9 @@ def add_capacity_column(df, file_path):
 
     # When there is no investment, we only look at normal capacity
     if "inv" in file_name:
-        df['Capacity'] = df['Changed Capacity'].fillna(0) + df['New Capacity'].fillna(0)
+        df['Capacity_tot'] = df['Changed Capacity'].fillna(0) + df['New Capacity'].fillna(0)
     else:
-        df['Capacity'] = df['Changed Capacity']
+        df['Capacity_tot'] = df['Changed Capacity']
     return df
 
 
@@ -124,7 +125,7 @@ def add_share_column(df):
     # Function to calculate the share
     def calculate_share(row):
         flow = row['Flow']
-        capacity = row['Capacity']
+        capacity = row['Capacity_tot']
         return flow / capacity if capacity and capacity != 0 else 0
 
     df['Share'] = df.apply(calculate_share, axis=1)
@@ -159,9 +160,9 @@ COUNTRY_COORDINATES = {
     'ES': (40.4637, -3.7492),
     'FI': (61.9241, 25.7482),
     'FR': (46.6034, 1.8883),
-    'GB': (55.3781, -3.4360),
+    'UK': (51.0, -1.5),  
     'GE': (42.3154, 43.3569),
-    'GR': (39.0742, 21.8243),
+    'EL': (39.0742, 21.8243),  
     'HR': (45.1, 15.2),
     'HU': (47.1625, 19.5033),
     'IE': (53.1424, -7.6921),
@@ -185,15 +186,18 @@ COUNTRY_COORDINATES = {
     'RO': (45.9432, 24.9668),
     'RS': (44.0165, 21.0059),
     'RU': (55.0, 40.0),  
+    'SD': (12.8628, 30.2176),  
     'SE': (60.1282, 18.6435),
     'SI': (46.1512, 14.9955),
     'SK': (48.6690, 19.6990),
     'SM': (43.9333, 12.4500),
-    'SU': (55.0, 38.0),  
+    'SU': (55.0, 38.0),
+    'TN': (33.8869, 9.5375),  
     'TR': (39.0, 35.0),
     'UA': (48.3794, 31.1656),
     'VA': (41.9029, 12.4534),
     'XK': (42.6026, 20.9020),
+    'LY': (26.3351, 17.2283)  
 }
 
 def get_country_coordinates(country_code):
@@ -217,56 +221,29 @@ def add_coordinates(df):
 
     return df
 
-
-
 # Points for the LNG import per country 
 LNG_IMPORT_COORDS = {
-    'BE': (50.75, 4.0),
+    'BE': (50.3, 4.4),
     'HR': (43.8, 16.0),
     'FI': (63.0, 26.0),
     'FR': (45.5, 2.0),
-    'DE': (51.0, 10.0),
-    'GR': (39.0, 21.5),
+    'DE': (52.0, 11.0),
+    'EL': (38.5, 21.5),
     'IT': (42.5, 13.5),
     'LT': (55.8, 23.7),
-    'NL': (52.4, 5.0),
+    'NL': (52.4, 6.0),
     'PL': (51, 21),
     'PT': (40.0, -8.0),
     'ES': (40, -2.0),
-    'GB': (52.0, -2.5),
+    'UK': (52.0, -2.5),
     'NO': (61.0, 10.0),
+    'EE': (58.6, 26.0),  
+    'TR': (39.0, 32.0)
 }
-
-def get_lng_import_aggregates(df):
-    df = df.copy()
-
-    # Filter rows where either side is LNG import
-    lng_imp_rows = df[(df['FromType'] == 'LNG_import') | (df['ToType'] == 'LNG_import')]
-
-    # Extract country code 
-    def get_lng_import_country(row):
-        if row['FromType'] == 'LNG_import':
-            return row['From']
-        elif row['ToType'] == 'LNG_import':
-            return row['To']
-        return None
-
-    lng_imp_rows['Country'] = lng_imp_rows.apply(get_lng_import_country, axis=1)
-    lng_imp_rows = lng_imp_rows.dropna(subset=['Country'])
-
-
-    # Aggregate by country: total capacity and weighted average share
-    agg = lng_imp_rows.groupby('Country').agg(
-        TotalCapacity=('Capacity', 'sum'),
-        WeightedFlow=('Flow', 'sum')
-    ).reset_index()
-    agg['Share'] = agg['WeightedFlow'] / agg['TotalCapacity']
-    
-    return agg
-
 
 
 # Color code for pipelines and LNG shares 
+'''
 def flow_color(share):
     if share <= 0.0:
         return 'rgba(180, 180, 180, 0.4)'  # 0-flow: gray
@@ -276,10 +253,10 @@ def flow_color(share):
         return 'rgba(255, 165, 0, 0.8)'    # Orange: medium usage
     elif share <= 1.0:
         return 'rgba(255, 0, 0, 0.8)'      # Red: high usage
+'''
 
 #@Mathilde: I don't know if this is working, but this way we could have a colour gradient to indicate the use
 #with a seamless colour scale
-'''
 def flow_color(share):
     if share <= 0.0:
         return 'rgba(0, 255, 0, 0.8)'  # Green
@@ -299,11 +276,11 @@ def flow_color(share):
         g = int(255 * (1 - ratio))
         b = 0
 
-    return f'rgba({r}, {g}, {b}, 0.8)'
-'''
+    return f'rgba({r}, {g}, {b}, 0.7)'
+
 
 # Final plot of the map 
-def plot_flow_map(df, ports, title):
+def plot_flow_map(df, ports, imports, title):
     fig = go.Figure()
 
     # First plot the pipeline flows
@@ -323,7 +300,7 @@ def plot_flow_map(df, ports, title):
                 color=line_color,
             ),
             hoverinfo='skip',
-            showlegend=False,  # Do not show these in the legend
+            showlegend=False,  # Do not show in legend 
         ))
 
     # Port names
@@ -337,50 +314,82 @@ def plot_flow_map(df, ports, title):
             color='black',
             symbol='circle',
         ),
-        name='Ports',  # Name for legend
-        hoverinfo='text',  # Display port name on hover
-        text=ports['Name of \ninstallation'],  # Port names on hover
+        name='LNG terminal', 
         showlegend=True,
     ))
 
     # Add LNG import points
     for country, (lat, lon) in LNG_IMPORT_COORDS.items():
+        share_import = imports[imports['From']== country]['Share'].values
+        capacity_import = imports[imports['From']== country]['Capacity_tot'].values
+
+        # Condition, otherwise it does not work
+        if len(capacity_import) > 0:
+            capacity_import = capacity_import[0]  
+        else:
+            capacity_import = 0
+
+        if len(share_import) > 0:
+            share_import = share_import[0]  
+        else:
+            share_import = 0
+
+        color = flow_color(share_import)
+        size = max(10, 0.00005*capacity_import)
+
         fig.add_trace(go.Scattergeo(
             lon=[lon],
             lat=[lat],
             mode='markers',
             marker=dict(
-                size=5,  # Default small size
-                color='blue',  # Temporary color
+                size=size,  
+                color=color ,  
                 symbol='circle',
                 line=dict(width=0.5, color='black')
             ),
-            name=f'{country} LNG Import',
-            hoverinfo='text',
-            text=f'{country}',  # Country code on hover
             showlegend=False
         ))
 
-    # Add traces for legend only
-    legend_items = [
-        ('No-flow', 'rgba(180, 180, 180, 0.4)'),
-        ('Low usage', 'rgba(0, 128, 0, 0.8)'),
-        ('Medium usage', 'rgba(255, 165, 0, 0.8)'),
-        ('High usage', 'rgba(255, 0, 0, 0.8)'),
+
+    # Add color bar for legend 
+    colorscale = [
+        [0.0, "rgb(0,255,0)"],      # Green
+        [0.5, "rgb(255,255,0)"],    # Yellow
+        [1.0, "rgb(255,0,0)"]       # Red
     ]
 
-    for label, color in legend_items:
-        fig.add_trace(go.Scattergeo(
-            lon=[None],  # No data to plot
-            lat=[None],
-            mode='lines',
-            line=dict(
-                width=1,
-                color=color,
+    fig.add_trace(go.Scattergeo(
+        lon=[None], lat=[None],  # no real data
+        mode='markers',
+        marker=dict(
+            colorscale=colorscale,
+            cmin=0,
+            cmax=1,
+            colorbar=dict(
+                title="Utilization",
+                titleside="top",
+                tickmode="array",
+                orientation = 'h',
+                tickvals=[0, 1],
+                ticktext=["Low", "High"],
+                len=0.17,
+                xpad = 0,
+                thicknessmode = 'pixels',
+                thickness = 10,
+                x=0.964,  
+                y=0.935,  
+                xanchor='right',
+                yanchor='top',
+                bgcolor='rgba(255, 255, 255, 0.8)',
+                bordercolor='rgba(0, 0, 0, 0.8)',
+                borderwidth=1,
             ),
-            name=label,
-            showlegend=True,
-        ))
+            showscale=True,
+            color=[0.5],  
+            size=0.01,    
+        ),
+    showlegend=False,
+    ))
 
 
     fig.update_layout(
@@ -401,8 +410,8 @@ def plot_flow_map(df, ports, title):
         width=900,
         height=650,
         legend=dict(
-            x=0.96,  
-            y=1.0,  
+            x=0.965,  
+            y=1.0, 
             xanchor='right',
             yanchor='top',
             bgcolor='rgba(255, 255, 255, 0.8)',
