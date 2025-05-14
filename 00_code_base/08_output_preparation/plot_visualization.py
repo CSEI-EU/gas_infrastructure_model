@@ -4,8 +4,9 @@ import os
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from output_visualization_functions import *
 
+from output_visualization_functions import *
+from LNG_external_imports_functions import *
 
 base_path = r"C:\Users\mar.eco\OneDrive - CBS - Copenhagen Business School\Desktop\hydrogen_grid"
 
@@ -36,8 +37,6 @@ country_map = {
 # LNG terminals to show on the map 
 years = [2024, 2021, 2035]
 filtered_ports = filter_lng_ports_by_year(input_LNG_file, years)
-#print(filtered_ports[filtered_ports['Name of \ninstallation'].str.contains('Kollsnes', case=False, na=False)])
-#print(filtered_ports[filtered_ports['Name of \ninstallation'].str.contains('Mukran', case=False, na=False)])
 
 # Change in Kollsnes 2 lon and Mukran lat 
 filtered_ports.loc[filtered_ports['Name of \ninstallation'] == 'Kollsnes 1', 'Longitude'] += 0.4
@@ -47,9 +46,11 @@ filtered_ports['Name of \ninstallation'] = filtered_ports['Name of \ninstallatio
 filtered_ports.loc[filtered_ports['Name of \ninstallation'] == 'Mukran FSRU Energos Power', 'Latitude'] -= 0.5
 # Remove the second one (exactly the same)
 filtered_ports = filtered_ports[filtered_ports['Name of \ninstallation'] != 'Mukran FSRU Neptune – 2nd']
-#print(filtered_ports.head())
-# -----------------------------------------------------------------------
 
+# Change latitude in Mag Mell (Cork-IE)
+filtered_ports.loc[filtered_ports['Name of \ninstallation'] == 'Mag Mell FSRU', 'Latitude'] += 0.5
+
+# -----------------------------------------------------------------------
 df = pd.read_excel(output_file_no_invest)
 df_methane = df[df['Commodity']=='Methane']
 df_raw = parse_edges(df_methane)
@@ -60,15 +61,6 @@ to_codes = df_raw['To'].unique()
 all_codes = set(from_codes) | set(to_codes)
 #print(all_codes)
 
-print('GB' in all_codes)  
-print('UK' in all_codes)  
-df_uk = df_raw[(df_raw['From'] == 'UK') | (df_raw['To'] == 'UK')]
-#print(df_uk)
-
-df_check = df_raw[(df_raw['From'] == 'TN') | (df_raw['To'] == 'TN')]
-#print(df_check)
-
-
 #----------------------------------------------------------------------
 df_raw['FromType'] = df_raw['From'].apply(label_node_type)
 df_raw['ToType'] = df_raw['To'].apply(label_node_type)
@@ -78,22 +70,16 @@ df_raw['To'] = df_raw['To'].apply(extract_country_code)
 df_filtered = df_raw[df_raw['From'].apply(interesting_countries) & df_raw['To'].apply(european_countries)]
 df_capacity = add_capacity_column(df_filtered, output_file_no_invest)
 df_with_share = add_share_column(df_capacity)
-#print(df_with_share.head(10))
 
 # Add coordinates
 df_with_coords = add_coordinates(df_with_share)
 
 lng_import_rows = df_with_share[(df_with_share['FromType'] == 'LNG_import') | (df_with_share['ToType'] == 'LNG_import')]
-#print(lng_import_rows)
 df_with_imports = df_with_share[(df_with_share['FromType'] == 'LNG_import')]
-print(df_with_imports)
 
 # Plot
 title = "Cross-border NG flows without investment (2024)"
 plot_flow_map(df_with_coords, filtered_ports, df_with_imports, title)
-#plot_flow_map(df_with_coords, filtered_ports, title)
-
-
 
 # ---------------------------------------------------------------------
 # Do all the same for the investment case 
@@ -115,5 +101,4 @@ df_invest_with_coords = add_coordinates(df_invest_with_share)
 
 # Plot the flow map for the "investment" scenario
 title_invest = "Cross-border NG flows with investment (2024)"
-#plot_flow_map(df_invest_with_coords, title=title_invest)
-#plot_flow_map(df_invest_with_coords, filtered_ports, title_invest)
+#plot_flow_map(df_invest_with_coords, filtered_ports, df_with_imports, title_invest)
