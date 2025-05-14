@@ -385,13 +385,11 @@ def plot_flow_map(df, ports, imports, title):
     showlegend=False,
     ))
  
- 
     fig.update_layout(
         title=title,
         geo=dict(
             scope='world',  # full world, but we control view
             projection_type='natural earth',
-            showland=True,
             showland=True,
             landcolor='rgb(220, 230, 250)',
             showcountries=True,                 # Shows borders even internal

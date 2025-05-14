@@ -7,6 +7,7 @@ from plotly.subplots import make_subplots
 
 from output_visualization_functions import *
 from LNG_external_imports_functions import *
+from year_difference_functions import *
 
 base_path = r"C:\Users\mar.eco\OneDrive - CBS - Copenhagen Business School\Desktop\hydrogen_grid"
 
@@ -50,6 +51,11 @@ filtered_ports = filtered_ports[filtered_ports['Name of \ninstallation'] != 'Muk
 # Change latitude in Mag Mell (Cork-IE)
 filtered_ports.loc[filtered_ports['Name of \ninstallation'] == 'Mag Mell FSRU', 'Latitude'] += 0.5
 
+
+title_ports = "LNG terminals addition over time"
+plot_ports_by_year(filtered_ports, 2021, 2024, 2035, title=title_ports)
+
+
 # -----------------------------------------------------------------------
 df = pd.read_excel(output_file_no_invest)
 df_methane = df[df['Commodity']=='Methane']
@@ -79,11 +85,12 @@ df_with_imports = df_with_share[(df_with_share['FromType'] == 'LNG_import')]
 
 # Plot
 title = "Cross-border NG flows without investment (2024)"
-plot_flow_map(df_with_coords, filtered_ports, df_with_imports, title)
+#plot_flow_map(df_with_coords, filtered_ports, df_with_imports, title)
 
 # ---------------------------------------------------------------------
 # Do all the same for the investment case 
 df_invest = pd.read_excel(output_file_invest)
+df_invest = df_invest[df_invest['Commodity']=='Methane']
 
 df_invest_raw = parse_edges(df_invest)
 df_invest_raw['FromType'] = df_invest_raw['From'].apply(label_node_type)
@@ -98,6 +105,7 @@ df_invest_with_share = add_share_column(df_invest_capacity)
 
 # Add coordinates 
 df_invest_with_coords = add_coordinates(df_invest_with_share)
+
 
 # Plot the flow map for the "investment" scenario
 title_invest = "Cross-border NG flows with investment (2024)"
