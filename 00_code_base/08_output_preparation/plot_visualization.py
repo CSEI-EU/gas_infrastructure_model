@@ -9,7 +9,9 @@ from output_visualization_functions import *
 from LNG_external_imports_functions import *
 from year_difference_functions import *
 
-base_path = r"C:\Users\mar.eco\OneDrive - CBS - Copenhagen Business School\Desktop\hydrogen_grid"
+base_path =r"C:\Users\flv.eco\OneDrive - CBS - Copenhagen Business School\Documents\03_LNG_Cap\hydrogen_grid"
+#r"C:\Users\mar.eco\OneDrive - CBS - Copenhagen Business School\Desktop\hydrogen_grid"
+#
 
 input_LNG_file = os.path.join(base_path, "01_data", "01_input_data", "01_raw", "01_Russian_War_Case", "LNG_locations.xlsx")
 output_file_no_invest = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "01_raw_results", "outputs_IAEE_2025_run_2024.xlsx")
@@ -85,7 +87,7 @@ df_with_imports = df_with_share[(df_with_share['FromType'] == 'LNG_import')]
 
 # Plot
 title = "Cross-border NG flows without investment (2024)"
-#plot_flow_map(df_with_coords, filtered_ports, df_with_imports, title)
+plot_flow_map(df_with_coords, filtered_ports, df_with_imports, title)
 
 # ---------------------------------------------------------------------
 # Do all the same for the investment case 
@@ -109,4 +111,4 @@ df_invest_with_coords = add_coordinates(df_invest_with_share)
 
 # Plot the flow map for the "investment" scenario
 title_invest = "Cross-border NG flows with investment (2024)"
-#plot_flow_map(df_invest_with_coords, filtered_ports, df_with_imports, title_invest)
+plot_flow_map(df_invest_with_coords, filtered_ports, df_with_imports, title = title_invest)

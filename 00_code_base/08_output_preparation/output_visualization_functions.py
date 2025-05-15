@@ -360,8 +360,10 @@ def plot_flow_map(df, ports, imports, title):
             cmin=0,
             cmax=1,
             colorbar=dict(
-                title="Utilization",
-                titleside="top",
+                title=dict(
+                text="Utilization",
+                side="top"
+                ),
                 tickmode="array",
                 orientation = 'h',
                 tickvals=[0, 1],
