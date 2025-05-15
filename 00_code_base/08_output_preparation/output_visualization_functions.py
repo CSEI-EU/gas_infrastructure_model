@@ -423,6 +423,9 @@ def plot_flow_map(df, ports, imports, title):
         )
     )
     fig.show()
+    return fig
+
+
 
 
 

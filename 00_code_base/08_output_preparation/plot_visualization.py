@@ -13,6 +13,17 @@ base_path =r"C:\Users\flv.eco\OneDrive - CBS - Copenhagen Business School\Docume
 #r"C:\Users\mar.eco\OneDrive - CBS - Copenhagen Business School\Desktop\hydrogen_grid"
 #
 
+# Import this for save funcroin to work
+# pip install -U kaleido
+save_flow_invest = True
+save_flow_no_invest = True
+file_name_invest = "Cross_border_flow_invest.png"
+file_name_no_invest = "Cross_border_flow_noinvest.png"
+
+output_path_no_invest = os.path.join(base_path, "02_plots", "Flow_plots", file_name_no_invest)
+output_path_invest = os.path.join(base_path, "02_plots", "Flow_plots", file_name_invest)
+
+
 input_LNG_file = os.path.join(base_path, "01_data", "01_input_data", "01_raw", "01_Russian_War_Case", "LNG_locations.xlsx")
 output_file_no_invest = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "01_raw_results", "outputs_IAEE_2025_run_2024.xlsx")
 output_file_invest = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "01_raw_results", "outputs_IAEE_2025_run_2024_inv.xlsx")
@@ -87,7 +98,11 @@ df_with_imports = df_with_share[(df_with_share['FromType'] == 'LNG_import')]
 
 # Plot
 title = "Cross-border NG flows without investment (2024)"
-plot_flow_map(df_with_coords, filtered_ports, df_with_imports, title)
+fig = plot_flow_map(df_with_coords, filtered_ports, df_with_imports, title)
+
+#Save the figure
+if save_flow_no_invest: 
+    fig.write_image(output_path_no_invest, width=1200, height=800, scale=2)
 
 # ---------------------------------------------------------------------
 # Do all the same for the investment case 
@@ -111,4 +126,4 @@ df_invest_with_coords = add_coordinates(df_invest_with_share)
 
 # Plot the flow map for the "investment" scenario
 title_invest = "Cross-border NG flows with investment (2024)"
-plot_flow_map(df_invest_with_coords, filtered_ports, df_with_imports, title = title_invest)
+fig = plot_flow_map(df_invest_with_coords, filtered_ports, df_with_imports, title = title_invest)
