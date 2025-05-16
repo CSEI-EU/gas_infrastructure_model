@@ -1,10 +1,12 @@
 # import packages
+
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
+os.chdir(r"C:\Users\flv.eco\OneDrive - CBS - Copenhagen Business School\Documents\03_LNG_Cap\hydrogen_grid\00_code_base\08_output_preparation")
 from output_visualization_functions import *
 from LNG_external_imports_functions import *
 from year_difference_functions import *

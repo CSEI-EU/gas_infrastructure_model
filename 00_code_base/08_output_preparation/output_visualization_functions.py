@@ -51,7 +51,7 @@ def extract_country_code(label):
 #and I ask myself: why there are two lists, they seem to be the same. 
 def interesting_countries(code):
     return code in [
-        'AL', 'AD', 'AM', 'AT', 'AZ', 'BY', 'BE', 'BA', 'BG', 'CH', 'CY', 'CZ',
+        'AL', 'AD', 'AM', 'AT', 'AZ', 'BY', 'BE', 'BA', 'BG', 'CH', 'CR' , 'CY', 'CZ',
         'DE', 'DK', 'DZ', 'EE', 'ES', 'FI', 'FR', 'UK', 'GE', 'EL', 'HR', 'HU', 'IE',
         'IS', 'IT', 'KZ', 'LI', 'LT', 'LU', 'LY', 'LV', 'MA','MC', 'MD', 'ME', 'MK', 'MT',
         'NL', 'NO', 'PL', 'PT', 'RO', 'RS', 'RU', 'SD', 'SE', 'SI', 'SK', 'SM', 'SU', 'TN', 'TR',
@@ -113,6 +113,7 @@ COUNTRY_COORDINATES = {
     'BA': (43.9159, 17.6791),
     'BG': (42.7339, 25.4858),
     'CH': (46.8182, 8.2275),
+    'CR': (39.3764, 59.3925),
     'CY': (35.1264, 33.4299),
     'CZ': (49.8175, 15.4730),
     'DE': (51.1657, 10.4515),
@@ -159,7 +160,7 @@ COUNTRY_COORDINATES = {
     'UA': (48.3794, 31.1656),
     'VA': (41.9029, 12.4534),
     'XK': (42.6026, 20.9020),
-    'LY': (26.3351, 17.2283)  
+    'LY': (26.3351, 17.2283),
 }
 
 def get_country_coordinates(country_code):
