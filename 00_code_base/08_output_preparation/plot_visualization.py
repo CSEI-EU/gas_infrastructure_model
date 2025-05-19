@@ -17,9 +17,9 @@ base_path =r"C:\Users\flv.eco\OneDrive - CBS - Copenhagen Business School\Docume
 
 # Import this for save funcroin to work
 # pip install kaleido==0.1.0post1
-save_flow_no_invest = False
+save_flow_no_invest = True 
 file_name_no_invest = "outputs_IAEE_2025_run_2035_SP.png"
-title_no_invest = "Cross-border NG flows in Stated Policies Scenario in 2035 "
+title_no_invest = "Cross-border NG flows in Stated Policies Scenario in 2035"
 
 save_flow_invest = False
 file_name_invest = "Cross_border_flow_2024_invest.png"
