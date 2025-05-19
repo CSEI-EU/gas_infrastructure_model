@@ -17,17 +17,20 @@ base_path =r"C:\Users\flv.eco\OneDrive - CBS - Copenhagen Business School\Docume
 
 # Import this for save funcroin to work
 # pip install kaleido==0.1.0post1
-save_flow_invest = False
 save_flow_no_invest = True
+file_name_no_invest = "outputs_IAEE_2025_run_2035_SP.png"
+title_no_invest = "Cross-border NG flows in Stated Policies Scenario in 2035 "
+
+save_flow_invest = False
 file_name_invest = "Cross_border_flow_2024_invest.png"
-file_name_no_invest = "outputs_IAEE_2025_run_2021.png"
+title_invest = "Cross-border NG flows with investment in 2024"
 
 output_path_no_invest = os.path.join(base_path, "02_plots", "Flow_Results", file_name_no_invest)
 output_path_invest = os.path.join(base_path, "02_plots", "Flow_Results", file_name_invest)
 
 
 input_LNG_file = os.path.join(base_path, "01_data", "01_input_data", "01_raw", "01_Russian_War_Case", "LNG_locations.xlsx")
-output_file_no_invest = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "01_raw_results", "outputs_IAEE_2025_run_2021.xlsx")
+output_file_no_invest = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "01_raw_results", "outputs_IAEE_2025_run_2035_SP.xlsx")
 output_file_invest = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "01_raw_results", "outputs_IAEE_2025_run_2024_inv.xlsx")
 output_2021 = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "02_prepared_results", "output_2021_prepared.xlsx")
 output_2024 = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "02_prepared_results", "output_2024_prepared.xlsx")
@@ -99,8 +102,7 @@ lng_import_rows = df_with_share[(df_with_share['FromType'] == 'LNG_import') | (d
 df_with_imports = df_with_share[(df_with_share['FromType'] == 'LNG_import')]
 
 # Plot
-title = "Cross-border NG flows without investment (2024)"
-fig = plot_flow_map(df_with_coords, filtered_ports, df_with_imports, title)
+fig = plot_flow_map(df_with_coords, filtered_ports, df_with_imports, title_no_invest)
 
 #Save the figure
 if save_flow_no_invest: 
@@ -128,7 +130,6 @@ df_invest_with_coords = add_coordinates(df_invest_with_share)
 
 
 # Plot the flow map for the "investment" scenario
-title_invest = "Cross-border NG flows with investment (2024)"
 fig = plot_flow_map(df_invest_with_coords, filtered_ports, df_with_imports, title = title_invest)
 
 if save_flow_invest: 
