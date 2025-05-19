@@ -276,3 +276,25 @@ def compute_average_costs(df_flows, df_edges, commodity='Methane'):
     longest_paths = compute_longest_chain_lengths(flow_dict)
     node_inflows = propagate_gas_mix_by_level(flow_dict, cost_dict, longest_paths)
     return aggregate_node_costs(node_inflows), compute_source_shares(node_inflows)
+
+#function to update the cost values on edges
+def update_edge_costs_to_real_value(df_edges_raw, df_edges_cap_cost_raw, commodity):
+    # Filter both dataframes by the specified commodity
+    df1 = df_edges_raw[df_edges_raw['Commodity'] == commodity].copy()
+    df2 = df_edges_cap_cost_raw[df_edges_cap_cost_raw['Commodity'] == commodity]
+
+    # Set multi-index for easier comparison and update
+    df2_indexed = df2.set_index(['Source', 'Destination'])
+
+    # Iterate over df1 and update costs_edge where needed
+    for idx, row in df1.iterrows():
+        key = (row['Source'], row['Destination'])
+        if key in df2_indexed.index:
+            cost_raw = row['costs_edge']
+            cost_new = df2_indexed.loc[key, 'costs_edge']
+            if cost_raw != cost_new:
+                df1.at[idx, 'costs_edge'] = cost_new
+
+    # Replace updated rows in original df_edges_raw
+    df_edges_raw.update(df1)
+    return df_edges_raw
