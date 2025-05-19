@@ -17,7 +17,7 @@ base_path =r"C:\Users\flv.eco\OneDrive - CBS - Copenhagen Business School\Docume
 
 # Import this for save funcroin to work
 # pip install kaleido==0.1.0post1
-save_flow_no_invest = True 
+save_flow_no_invest = False 
 file_name_no_invest = "outputs_IAEE_2025_run_2035_SP.png"
 title_no_invest = "Cross-border NG flows in Stated Policies Scenario in 2035"
 
@@ -109,8 +109,13 @@ utilization_df.rename(columns={"From": "Country"}, inplace=True)
 total_flow = utilization_df["Flow"].sum()
 total_capacity = utilization_df["Capacity_tot"].sum()
 
+total_flow_EU = utilization_df[utilization_df.Country.apply(european_countries)].Flow.sum()
+total_capacity_EU = utilization_df[utilization_df.Country.apply(european_countries)].Capacity_tot.sum()
+
+
 # Calculate utilization share
 total_share = total_flow / total_capacity if total_capacity != 0 else 0
+total_share_EU = total_flow_EU / total_capacity_EU if total_capacity_EU != 0 else 0
 
 # Create a summary row
 summary_row = pd.DataFrame({
@@ -119,9 +124,15 @@ summary_row = pd.DataFrame({
     "Capacity_tot": [total_capacity],
     "Share": [total_share]
 })
+summary_row_EU = pd.DataFrame({
+    "Country": ["Total_EU"],
+    "Flow": [total_flow_EU],
+    "Capacity_tot": [total_capacity_EU],
+    "Share": [total_share_EU]
+})
 
 # Append the summary to the DataFrame
-utilization_summary = pd.concat([utilization_df, summary_row], ignore_index=True)
+utilization_summary = pd.concat([utilization_df, summary_row, summary_row_EU], ignore_index=True)
 
 # Plot
 fig = plot_flow_map(df_with_coords, filtered_ports, df_with_imports, title_no_invest)
@@ -149,8 +160,10 @@ df_invest_with_share = add_share_column(df_invest_capacity)
 
 # Add coordinates 
 df_invest_with_coords = add_coordinates(df_invest_with_share)
-
 lng_import_rows_invest = df_invest_with_share[(df_invest_with_share['FromType'] == 'LNG_import') | (df_invest_with_share['ToType'] == 'LNG_import')]
+
+# Why do we deen to filter in this way? Twith this procdure we drop information on non European LNG Terminals?
+#@Mathilde
 df_with_imports_invest = df_invest_with_share[(df_invest_with_share['FromType'] == 'LNG_import')]
 df_with_imports_invest.drop(df_with_imports_invest[df_with_imports_invest['Flow'] == 0].index, inplace=True)
 
@@ -162,8 +175,13 @@ utilization_invest_df.rename(columns={"From": "Country"}, inplace=True)
 total_flow_invest = utilization_invest_df["Flow"].sum()
 total_capacity_invest = utilization_invest_df["Capacity_tot"].sum()
 
+total_flow_EU_invest  = utilization_invest_df[utilization_invest_df.Country.apply(european_countries)].Flow.sum()
+total_capacity_EU_invest  = utilization_invest_df[utilization_invest_df.Country.apply(european_countries)].Capacity_tot.sum()
+
+
 # Calculate utilization share
 total_share_invest = total_flow_invest / total_capacity_invest if total_capacity_invest != 0 else 0
+total_share_EU_invest = total_flow_EU_invest / total_capacity_EU_invest if total_capacity_EU_invest != 0 else 0
 
 # Create a summary row
 summary_row_invest = pd.DataFrame({
@@ -172,9 +190,15 @@ summary_row_invest = pd.DataFrame({
     "Capacity_tot": [total_capacity_invest],
     "Share": [total_share_invest]
 })
+summary_row_EU_invest = pd.DataFrame({
+    "Country": ["Total_EU"],
+    "Flow": [total_flow_EU_invest],
+    "Capacity_tot": [total_capacity_EU_invest],
+    "Share": [total_share_EU_invest]
+})
 
 # Append the summary to the DataFrame
-utilization_summary_invest = pd.concat([utilization_invest_df, summary_row_invest], ignore_index=True)
+utilization_summary_invest = pd.concat([utilization_invest_df, summary_row_invest, summary_row_EU_invest], ignore_index=True)
 
 # Plot the flow map for the "investment" scenario
 fig = plot_flow_map(df_invest_with_coords, filtered_ports, df_with_imports_invest, title = title_invest)
