@@ -591,26 +591,6 @@ def plot_bar_chart (df):
 
 
 
-
-
-
-# Plot utilization share by country as a bar chart for the investment scenario
-
-def plot_bar_chart (df):
-    # Create a bar chart for utilization share
-    fig = px.bar(
-        df,
-        x="Country",
-        y="Share",
-        labels={"Share": "Utilization Share", "Country": "Country"},
-        text=df["Share"].apply(lambda x: f"{x:.0%}")
-    )
-    fig.update_traces(textposition='outside', marker_color='royalblue')
-    fig.update_layout(yaxis_tickformat=".0%", yaxis_range=[0, 1.1])
-    fig.show()
-    return fig
-
-
 # Old code with normal red to blue colors 
 '''def flow_color(share):
     if share <= 0.0:

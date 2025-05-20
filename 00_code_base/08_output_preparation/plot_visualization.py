@@ -11,14 +11,14 @@ from output_visualization_functions import *
 from LNG_external_imports_functions import *
 from year_difference_functions import *
 
-# base_path =r"C:\Users\flv.eco\OneDrive - CBS - Copenhagen Business School\Documents\03_LNG_Cap\hydrogen_grid"
-base_path = r"C:\Users\mar.eco\OneDrive - CBS - Copenhagen Business School\Desktop\hydrogen_grid"
+base_path =r"C:\Users\flv.eco\OneDrive - CBS - Copenhagen Business School\Documents\03_LNG_Cap\hydrogen_grid"
+#base_path = r"C:\Users\mar.eco\OneDrive - CBS - Copenhagen Business School\Desktop\hydrogen_grid"
 #
 
 # Import this for save funcroin to work
 # pip install kaleido==0.1.0post1
 save_flow_no_invest = True 
-file_name_no_invest = "outputs_IAEE_2025_run_2024_plus_no_QA"
+file_name_no_invest = "outputs_IAEE_2025_run_2035_SP"
 title_no_invest = "Cross-border NG flows in Stated Policies Scenario in 2035"
 
 save_flow_invest = False
@@ -214,7 +214,7 @@ if save_flow_invest:
     bar_fig.write_image(output_path_invest + '_bar_chart.png', width=1135, height=800, scale=2)
 
 
-
+# ---------------------------------------------------------------------
 
 data_path = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "02_prepared_results")
 scenario = "2035_AP_to_SP"
@@ -225,5 +225,5 @@ file_cost_difference_2021 = os.path.join(data_path, "cost_shares_differences_to_
 file_cost_difference_2024 = os.path.join(data_path, "cost_shares_differences_to_2024.xlsx")
 file_cost_difference_2035 = os.path.join(data_path, "cost_shares_differences_to_2035_SP.xlsx")
 
-# plot_cost_map(input_file_cost, scenario, base_path, False)
-plot_cost_difference(file_cost_difference_2035, full_name, scenario, base_path, True)
+
+# plot_cost_difference(file_cost_difference_2035, full_name, scenario, base_path, True)
