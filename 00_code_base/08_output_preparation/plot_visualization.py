@@ -27,6 +27,8 @@ title_invest = "Cross-border NG flows with investment in 2024"
 
 output_path_no_invest = os.path.join(base_path, "02_plots", "Flow_Results", file_name_no_invest)
 output_path_invest = os.path.join(base_path, "02_plots", "Flow_Results", file_name_invest)
+output_path_xlsx = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "02_prepared_results", file_name_no_invest+"_utilization_share.xlsx")
+output_path_invest_xlsx = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "02_prepared_results", file_name_invest+"_utilization_share.xlsx")
 
 
 input_LNG_file = os.path.join(base_path, "01_data", "01_input_data", "01_raw", "01_Russian_War_Case", "LNG_locations.xlsx")
@@ -133,14 +135,16 @@ summary_row_EU = pd.DataFrame({
 
 # Append the summary to the DataFrame
 utilization_summary = pd.concat([utilization_df, summary_row, summary_row_EU], ignore_index=True)
+bar_fig = plot_bar_chart(utilization_summary)
 
 # Plot
 fig = plot_flow_map(df_with_coords, filtered_ports, df_with_imports, title_no_invest)
 
 #Save the figure
 if save_flow_no_invest: 
-    utilization_summary.to_excel(output_path_no_invest.replace('.png', '_utilization_share.xlsx'), index=False)
     fig.write_image(output_path_no_invest, width=1135, height=800, scale=2)
+    utilization_summary.to_excel(output_path_xlsx, index=False)
+    bar_fig.write_image(output_path_no_invest.replace('.png', '_bar_chart.png'), width=1135, height=800, scale=2)
 
 # ---------------------------------------------------------------------
 # Do all the same for the investment case 
@@ -165,7 +169,7 @@ lng_import_rows_invest = df_invest_with_share[(df_invest_with_share['FromType'] 
 # Why do we deen to filter in this way? With this procdure we drop information on non European LNG Terminals?
 # @Mathilde
 df_with_imports_invest = df_invest_with_share[(df_invest_with_share['FromType'] == 'LNG_import')]
-#df_with_imports_invest.drop(df_with_imports_invest[df_with_imports_invest['Flow'] == 0].index, inplace=True)
+df_with_imports_invest.drop(df_with_imports_invest[df_with_imports_invest['Flow'] == 0].index, inplace=True)
 
 # Filter out rows to save
 utilization_invest_df = df_with_imports_invest[["From", "Flow", "Capacity_tot", "Share"]]
@@ -199,13 +203,16 @@ summary_row_EU_invest = pd.DataFrame({
 
 # Append the summary to the DataFrame
 utilization_summary_invest = pd.concat([utilization_invest_df, summary_row_invest, summary_row_EU_invest], ignore_index=True)
+bar_fig = plot_bar_chart(utilization_summary_invest)
 
 # Plot the flow map for the "investment" scenario
 fig = plot_flow_map(df_invest_with_coords, filtered_ports, df_with_imports_invest, title = title_invest)
 
 if save_flow_invest: 
-    utilization_summary_invest.to_excel(output_path_invest.replace('.png', '_utilization_share.xlsx'), index=False)
     fig.write_image(output_path_invest, width=1135, height=800, scale=2)
+    utilization_summary_invest.to_excel(output_path_invest_xlsx, index=False)
+    bar_fig.write_image(output_path_invest.replace('.png', '_bar_chart.png'), width=1135, height=800, scale=2)
+
 
 
 
