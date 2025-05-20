@@ -213,4 +213,8 @@ data_path = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectio
 input_file_cost = os.path.join(data_path, "costs_shares_IAEE_2025_run_2035_SP.xlsx")
 scenario = "2035_SP"
 
+file_cost_difference_2021 = os.path.join(data_path, "cost_shares_differences_to_2021.xlsx")
+file_cost_difference_2024 = os.path.join(data_path, "cost_shares_differences_to_2024.xlsx")
+# file_cost_difference_2035 = os.path.join(data_path, "cost_shares_differences_to_2021.xlsx")
+
 plot_cost_map(input_file_cost, scenario, base_path, True)
