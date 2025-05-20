@@ -6,13 +6,13 @@ import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-os.chdir(r"C:\Users\flv.eco\OneDrive - CBS - Copenhagen Business School\Documents\03_LNG_Cap\hydrogen_grid\00_code_base\08_output_preparation")
+#os.chdir(r"C:\Users\flv.eco\OneDrive - CBS - Copenhagen Business School\Documents\03_LNG_Cap\hydrogen_grid\00_code_base\08_output_preparation")
 from output_visualization_functions import *
 from LNG_external_imports_functions import *
 from year_difference_functions import *
 
-base_path =r"C:\Users\flv.eco\OneDrive - CBS - Copenhagen Business School\Documents\03_LNG_Cap\hydrogen_grid"
-#r"C:\Users\mar.eco\OneDrive - CBS - Copenhagen Business School\Desktop\hydrogen_grid"
+# base_path =r"C:\Users\flv.eco\OneDrive - CBS - Copenhagen Business School\Documents\03_LNG_Cap\hydrogen_grid"
+base_path = r"C:\Users\mar.eco\OneDrive - CBS - Copenhagen Business School\Desktop\hydrogen_grid"
 #
 
 # Import this for save funcroin to work
@@ -213,3 +213,11 @@ if save_flow_invest:
     utilization_summary_invest.to_excel(output_path_invest_xlsx, index=False)
     bar_fig.write_image(output_path_invest.replace('.png', '_bar_chart.png'), width=1135, height=800, scale=2)
 
+
+
+
+data_path = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "02_prepared_results")
+input_file_cost = os.path.join(data_path, "costs_shares_IAEE_2025_run_2024.xlsx")
+scenario = "2024"
+
+plot_cost_map(input_file_cost, scenario, base_path, False)
