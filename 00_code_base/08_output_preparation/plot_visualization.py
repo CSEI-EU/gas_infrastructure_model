@@ -109,8 +109,8 @@ utilization_df.rename(columns={"From": "Country"}, inplace=True)
 total_flow = utilization_df["Flow"].sum()
 total_capacity = utilization_df["Capacity_tot"].sum()
 
-total_flow_EU = utilization_df[utilization_df.Country.apply(european_countries)].Flow.sum()
-total_capacity_EU = utilization_df[utilization_df.Country.apply(european_countries)].Capacity_tot.sum()
+total_flow_EU = utilization_df[utilization_df.Country.apply(eu_countries)].Flow.sum()
+total_capacity_EU = utilization_df[utilization_df.Country.apply(eu_countries)].Capacity_tot.sum()
 
 
 # Calculate utilization share
@@ -162,8 +162,8 @@ df_invest_with_share = add_share_column(df_invest_capacity)
 df_invest_with_coords = add_coordinates(df_invest_with_share)
 lng_import_rows_invest = df_invest_with_share[(df_invest_with_share['FromType'] == 'LNG_import') | (df_invest_with_share['ToType'] == 'LNG_import')]
 
-# Why do we deen to filter in this way? Twith this procdure we drop information on non European LNG Terminals?
-#@Mathilde
+# Why do we deen to filter in this way? With this procdure we drop information on non European LNG Terminals?
+# @Mathilde
 df_with_imports_invest = df_invest_with_share[(df_invest_with_share['FromType'] == 'LNG_import')]
 #df_with_imports_invest.drop(df_with_imports_invest[df_with_imports_invest['Flow'] == 0].index, inplace=True)
 
@@ -175,8 +175,8 @@ utilization_invest_df.rename(columns={"From": "Country"}, inplace=True)
 total_flow_invest = utilization_invest_df["Flow"].sum()
 total_capacity_invest = utilization_invest_df["Capacity_tot"].sum()
 
-total_flow_EU_invest  = utilization_invest_df[utilization_invest_df.Country.apply(european_countries)].Flow.sum()
-total_capacity_EU_invest  = utilization_invest_df[utilization_invest_df.Country.apply(european_countries)].Capacity_tot.sum()
+total_flow_EU_invest  = utilization_invest_df[utilization_invest_df.Country.apply(eu_countries)].Flow.sum()
+total_capacity_EU_invest  = utilization_invest_df[utilization_invest_df.Country.apply(eu_countries)].Capacity_tot.sum()
 
 
 # Calculate utilization share
