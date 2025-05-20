@@ -67,6 +67,14 @@ def european_countries(code):
         'UA', 'VA', 'XK'
     ]
 
+def eu_countries(code):
+    return code in [
+        'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
+        'DE', 'EL', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
+        'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE'
+    ]
+
+
 # Calculate the final capacity with and without investment 
 def add_capacity_column(df, file_path):
     df = df.copy()
@@ -389,7 +397,7 @@ def plot_flow_map(df, ports, imports, title):
     ))
  
     fig.update_layout(
-        title=title,
+        #title=title,
         geo=dict(
             scope='world',  # full world, but we control view
             projection_type='natural earth',
