@@ -4,6 +4,7 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
+import plotly.express as px
 from plotly.subplots import make_subplots
 from plotly.colors import sample_colorscale, diverging
 
@@ -426,6 +427,73 @@ def plot_flow_map(df, ports, imports, title):
     fig.show()
     return fig
 
+# Need to convert iso2 to iso3 country codes for plotly 
+# Errors for EL and UK : need to change them for pycountry
+def convert_to_alpha3(iso2):
+    corrections = {
+        "UK": "GB",  
+        "EL": "GR", 
+    }
+    iso2 = corrections.get(iso2, iso2)
+
+    try:
+        return pycountry.countries.get(alpha_2=iso2).alpha_3
+    except:
+        return None
+
+
+def plot_cost_map(input_path, scenario, base_path, save):
+    output_file = os.path.join(base_path, "02_plots", f"cost_heatmap_{scenario}.png")
+    df = pd.read_excel(input_path)
+    df.columns = df.columns.str.strip()
+
+    df = df[df["Node"].apply(european_countries)]
+    df["Node_ISO3"] = df["Node"].apply(convert_to_alpha3)
+
+    color_range = [11000, 35000]
+
+    fig = go.Figure(data=go.Choropleth(
+        locations=df["Node_ISO3"],
+        z=df["Total Cost"],
+        colorscale="Viridis",
+        zmin=color_range[0],
+        zmax=color_range[1],
+        marker_line_color='rgb(180, 200, 230)',  # country borders
+        marker_line_width=0.5,
+        colorbar=dict(
+            title="Total Cost (€)",
+            titlefont=dict(size=14),
+            tickfont=dict(size=12),
+            len=0.6,
+            y=0.5
+        ),
+        geo='geo' 
+    ))
+
+    fig.update_layout(
+        # title not shown
+        geo=dict(
+            scope='world',
+            projection_type='natural earth',
+            showland=True,
+            landcolor='rgb(220, 230, 250)',
+            showcountries=True,
+            countrycolor='rgb(180, 200, 230)',
+            showcoastlines=True,
+            coastlinecolor='rgb(160, 180, 220)',
+            center=dict(lat=50, lon=20),
+            lataxis=dict(range=[30, 65]),
+            lonaxis=dict(range=[-20, 40]),
+        ),
+        margin={"r": 0, "t": 0, "l": 0, "b": 0},
+        width=900,
+        height=650
+    )
+
+    if save:
+        fig.write_image(output_file, width=1135, height=800, scale=2)
+    else:
+        fig.show()
 
 
 

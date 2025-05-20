@@ -6,13 +6,13 @@ import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-os.chdir(r"C:\Users\flv.eco\OneDrive - CBS - Copenhagen Business School\Documents\03_LNG_Cap\hydrogen_grid\00_code_base\08_output_preparation")
+#os.chdir(r"C:\Users\flv.eco\OneDrive - CBS - Copenhagen Business School\Documents\03_LNG_Cap\hydrogen_grid\00_code_base\08_output_preparation")
 from output_visualization_functions import *
 from LNG_external_imports_functions import *
 from year_difference_functions import *
 
-base_path =r"C:\Users\flv.eco\OneDrive - CBS - Copenhagen Business School\Documents\03_LNG_Cap\hydrogen_grid"
-#r"C:\Users\mar.eco\OneDrive - CBS - Copenhagen Business School\Desktop\hydrogen_grid"
+# base_path =r"C:\Users\flv.eco\OneDrive - CBS - Copenhagen Business School\Documents\03_LNG_Cap\hydrogen_grid"
+base_path = r"C:\Users\mar.eco\OneDrive - CBS - Copenhagen Business School\Desktop\hydrogen_grid"
 #
 
 # Import this for save funcroin to work
@@ -165,7 +165,7 @@ lng_import_rows_invest = df_invest_with_share[(df_invest_with_share['FromType'] 
 # Why do we deen to filter in this way? Twith this procdure we drop information on non European LNG Terminals?
 #@Mathilde
 df_with_imports_invest = df_invest_with_share[(df_invest_with_share['FromType'] == 'LNG_import')]
-df_with_imports_invest.drop(df_with_imports_invest[df_with_imports_invest['Flow'] == 0].index, inplace=True)
+#df_with_imports_invest.drop(df_with_imports_invest[df_with_imports_invest['Flow'] == 0].index, inplace=True)
 
 # Filter out rows to save
 utilization_invest_df = df_with_imports_invest[["From", "Flow", "Capacity_tot", "Share"]]
@@ -206,3 +206,11 @@ fig = plot_flow_map(df_invest_with_coords, filtered_ports, df_with_imports_inves
 if save_flow_invest: 
     utilization_summary_invest.to_excel(output_path_invest.replace('.png', '_utilization_share.xlsx'), index=False)
     fig.write_image(output_path_invest, width=1135, height=800, scale=2)
+
+
+
+data_path = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "02_prepared_results")
+input_file_cost = os.path.join(data_path, "costs_shares_IAEE_2025_run_2021.xlsx")
+scenario = "2021"
+
+plot_cost_map(input_file_cost, scenario, base_path, False)
