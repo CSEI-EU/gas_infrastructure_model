@@ -4,6 +4,7 @@ import ast
 from collections import defaultdict, deque
 import networkx as nx
 import os
+import glob
 
 
 
@@ -298,3 +299,60 @@ def update_edge_costs_to_real_value(df_edges_raw, df_edges_cap_cost_raw, commodi
     # Replace updated rows in original df_edges_raw
     df_edges_raw.update(df1)
     return df_edges_raw
+
+def load_excel_sheets_by_name(folder_path, substring, sheet_name="cost"):
+    # Pattern for finding matching Excel files
+    pattern = os.path.join(folder_path, f"*{substring}*.xlsx")
+    
+    # Get list of matching files
+    file_list = glob.glob(pattern)
+    
+    # Dictionary to store DataFrames
+    dataframes = {}
+    
+    for file_path in file_list:
+        try:
+            df = pd.read_excel(file_path, sheet_name=sheet_name)
+            file_name = os.path.splitext(os.path.basename(file_path))[0]
+            dataframes[file_name] = df
+        except Exception as e:
+            print(f"Error loading sheet '{sheet_name}' from {file_path}: {e}")
+    
+    return dataframes
+
+def calculate_differences(reference_df, comparison_dfs):
+    differences = {}
+    ref_df = reference_df.set_index("Node")
+    
+    for name, df in comparison_dfs.items():
+        if name == "costs_shares_IAEE_2025_run_2021":
+            continue  # Skip the reference itself
+        
+        comp_df = df.set_index("Node")
+        diff = comp_df - ref_df
+        diff.reset_index(inplace=True)
+        differences[name] = diff
+        
+    return differences
+
+def summarize_total_cost_differences(difference_dfs):
+    summary_df = None
+
+    for scenario, df in difference_dfs.items():
+        total_cost_diff = df[["Node", "Total Cost"]].copy()
+        total_cost_diff.rename(columns={"Total Cost": scenario}, inplace=True)
+        
+        if summary_df is None:
+            summary_df = total_cost_diff
+        else:
+            summary_df = summary_df.merge(total_cost_diff, on="Node", how="outer")
+    
+    return summary_df
+
+def export_differences_to_excel(difference_dfs, summary_df, output_path):
+    with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
+        for scenario, df in difference_dfs.items():
+            df.to_excel(writer, sheet_name=scenario[:31], index=False)
+        summary_df.to_excel(writer, sheet_name="Summary_Total_Cost", index=False)
+    print(f"Exported all differences to {output_path}")
+
