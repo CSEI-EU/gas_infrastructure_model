@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-# os.chdir(r"C:\Users\flv.eco\OneDrive - CBS - Copenhagen Business School\Documents\03_LNG_Cap\hydrogen_grid\00_code_base\08_output_preparation")
+os.chdir(r"C:\Users\flv.eco\OneDrive - CBS - Copenhagen Business School\Documents\03_LNG_Cap\hydrogen_grid\00_code_base\08_output_preparation")
 from output_visualization_functions import *
 from LNG_external_imports_functions import *
 from year_difference_functions import *
@@ -17,12 +17,12 @@ base_path = r"C:\Users\mar.eco\OneDrive - CBS - Copenhagen Business School\Deskt
 
 # Import this for save funcroin to work
 # pip install kaleido==0.1.0post1
-save_flow_no_invest = False 
-file_name_no_invest = "outputs_IAEE_2025_run_2035_SP.png"
+save_flow_no_invest = True 
+file_name_no_invest = "outputs_IAEE_2025_run_2024_plus_no_QA"
 title_no_invest = "Cross-border NG flows in Stated Policies Scenario in 2035"
 
 save_flow_invest = False
-file_name_invest = "Cross_border_flow_2024_invest.png"
+file_name_invest = "outputs_IAEE_2025_run_2024_inv"
 title_invest = "Cross-border NG flows with investment in 2024"
 
 output_path_no_invest = os.path.join(base_path, "02_plots", "Flow_Results", file_name_no_invest)
@@ -32,8 +32,8 @@ output_path_invest_xlsx = os.path.join(base_path, "01_data", "02_output_data", "
 
 
 input_LNG_file = os.path.join(base_path, "01_data", "01_input_data", "01_raw", "01_Russian_War_Case", "LNG_locations.xlsx")
-output_file_no_invest = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "01_raw_results", "outputs_IAEE_2025_run_2035_SP.xlsx")
-output_file_invest = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "01_raw_results", "outputs_IAEE_2025_run_2024_inv.xlsx")
+output_file_no_invest = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "01_raw_results", file_name_no_invest+ ".xlsx")
+output_file_invest = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "01_raw_results", file_name_invest+".xlsx")
 output_2021 = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "02_prepared_results", "output_2021_prepared.xlsx")
 output_2024 = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "02_prepared_results", "output_2024_prepared.xlsx")
 
@@ -142,9 +142,9 @@ fig = plot_flow_map(df_with_coords, filtered_ports, df_with_imports, title_no_in
 
 #Save the figure
 if save_flow_no_invest: 
-    fig.write_image(output_path_no_invest, width=1135, height=800, scale=2)
+    fig.write_image(output_path_no_invest + ".png", width=1135, height=800, scale=2)
     utilization_summary.to_excel(output_path_xlsx, index=False)
-    bar_fig.write_image(output_path_no_invest.replace('.png', '_bar_chart.png'), width=1135, height=800, scale=2)
+    bar_fig.write_image(output_path_no_invest + '_bar_chart.png', width=1135, height=800, scale=2)
 
 # ---------------------------------------------------------------------
 # Do all the same for the investment case 
@@ -209,9 +209,9 @@ bar_fig = plot_bar_chart(utilization_summary_invest)
 fig = plot_flow_map(df_invest_with_coords, filtered_ports, df_with_imports_invest, title = title_invest)
 
 if save_flow_invest: 
-    fig.write_image(output_path_invest, width=1135, height=800, scale=2)
+    fig.write_image(output_path_invest + ".png", width=1135, height=800, scale=2)
     utilization_summary_invest.to_excel(output_path_invest_xlsx, index=False)
-    bar_fig.write_image(output_path_invest.replace('.png', '_bar_chart.png'), width=1135, height=800, scale=2)
+    bar_fig.write_image(output_path_invest + '_bar_chart.png', width=1135, height=800, scale=2)
 
 
 
