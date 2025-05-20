@@ -458,7 +458,8 @@ def plot_cost_map(input_path, scenario, base_path, save):
     df = df[df["Node"].apply(european_countries)]
     df["Node_ISO3"] = df["Node"].apply(convert_to_alpha3)
 
-    color_range = [11000, 35000]
+    color_range = [11000, 35000] # color range from 2021
+    # color_range = [df["Total Cost"].min(), df["Total Cost"].max()]
 
     fig = go.Figure(data=go.Choropleth(
         locations=df["Node_ISO3"],
