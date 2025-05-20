@@ -217,11 +217,13 @@ if save_flow_invest:
 
 
 data_path = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "02_prepared_results")
-input_file_cost = os.path.join(data_path, "costs_shares_IAEE_2025_run_2035_SP.xlsx")
-scenario = "2035_SP"
+scenario = "2024_plus_no_USA"
+full_name = "costs_shares_IAEE_2025_run_2024_plus_no_USA"
+input_file_cost = os.path.join(data_path, "costs_shares_IAEE_2025_run_2024_plus_no_USA.xlsx")
 
 file_cost_difference_2021 = os.path.join(data_path, "cost_shares_differences_to_2021.xlsx")
 file_cost_difference_2024 = os.path.join(data_path, "cost_shares_differences_to_2024.xlsx")
-# file_cost_difference_2035 = os.path.join(data_path, "cost_shares_differences_to_2021.xlsx")
+ile_cost_difference_2035 = os.path.join(data_path, "cost_shares_differences_to_2035_SP.xlsx")
 
-plot_cost_map(input_file_cost, scenario, base_path, True)
+# plot_cost_map(input_file_cost, scenario, base_path, False)
+plot_cost_difference(file_cost_difference_2024, full_name, scenario, base_path, True)

@@ -505,27 +505,39 @@ def plot_cost_map(input_path, scenario, base_path, save):
     else:
         fig.show()
 
-def plot_cost_difference(input_path, scenario, base_path, save):
-    output_file = os.path.join(base_path, "02_plots", "Costs_Results", f"cost_heatmap_{scenario}.png")
-    df = pd.read_excel(input_path)
+
+
+
+def plot_cost_difference(input_difference, full_scenario_name, scenario, base_path, save):
+    output_file = os.path.join(base_path, "02_plots", "Costs_Results", f"cost_difference_heatmap_{scenario}.png")
+    
+    df = pd.read_excel(input_difference, sheet_name="Summary_Total_Cost")
     df.columns = df.columns.str.strip()
 
     df = df[df["Node"].apply(european_countries)]
     df["Node_ISO3"] = df["Node"].apply(convert_to_alpha3)
 
-    color_range = [11000, 35000] # color range from 2021
-    # color_range = [df["Total Cost"].min(), df["Total Cost"].max()]
+    z = df[full_scenario_name]
+    # color_range = [z.min(), z.max()]
+    color_range = [-13000, 7000]
+
+    # Green to red 
+    colorscale = [
+    [0.0, 'rgb(0, 128, 0)'],      # Green 
+    [0.65, 'rgb(255, 255, 255)'],  # White 
+    [1.0, 'rgb(255, 0, 0)'],      # Red 
+    ]
 
     fig = go.Figure(data=go.Choropleth(
         locations=df["Node_ISO3"],
-        z=df["Total Cost"],
-        colorscale="Viridis",
+        z=z,
+        colorscale=colorscale,
         zmin=color_range[0],
         zmax=color_range[1],
         marker_line_color='rgb(180, 200, 230)',  # country borders
         marker_line_width=0.5,
         colorbar=dict(
-            title="Total Cost (€)",
+            title="Cost difference (€)",
             titlefont=dict(size=14),
             tickfont=dict(size=12),
             len=0.6,
@@ -559,8 +571,10 @@ def plot_cost_difference(input_path, scenario, base_path, save):
     else:
         fig.show()
 
-# Plot utilization share by country as a bar chart for the investment scenario
 
+
+
+# Plot utilization share by country as a bar chart for the investment scenario
 def plot_bar_chart (df):
     # Create a bar chart for utilization share
     fig = px.bar(
