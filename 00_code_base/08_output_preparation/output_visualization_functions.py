@@ -451,7 +451,7 @@ def convert_to_alpha3(iso2):
 
 
 def plot_cost_map(input_path, scenario, base_path, save):
-    output_file = os.path.join(base_path, "02_plots", f"cost_heatmap_{scenario}.png")
+    output_file = os.path.join(base_path, "02_plots", "Costs_Results", f"cost_heatmap_{scenario}.png")
     df = pd.read_excel(input_path)
     df.columns = df.columns.str.strip()
 

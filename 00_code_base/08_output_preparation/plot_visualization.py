@@ -210,7 +210,7 @@ if save_flow_invest:
 
 
 data_path = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "02_prepared_results")
-input_file_cost = os.path.join(data_path, "costs_shares_IAEE_2025_run_2021.xlsx")
-scenario = "2021"
+input_file_cost = os.path.join(data_path, "costs_shares_IAEE_2025_run_2024.xlsx")
+scenario = "2024"
 
 plot_cost_map(input_file_cost, scenario, base_path, False)
