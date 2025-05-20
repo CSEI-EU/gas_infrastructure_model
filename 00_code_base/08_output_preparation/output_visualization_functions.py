@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from plotly.colors import sample_colorscale, diverging
+import plotly.express as px
 
 import pycountry
 from geopy.geocoders import Nominatim
@@ -435,7 +436,21 @@ def plot_flow_map(df, ports, imports, title):
     return fig
 
 
+# Plot utilization share by country as a bar chart for the investment scenario
 
+def plot_bar_chart (df):
+    # Create a bar chart for utilization share
+    fig = px.bar(
+        df,
+        x="Country",
+        y="Share",
+        labels={"Share": "Utilization Share", "Country": "Country"},
+        text=df["Share"].apply(lambda x: f"{x:.0%}")
+    )
+    fig.update_traces(textposition='outside', marker_color='royalblue')
+    fig.update_layout(yaxis_tickformat=".0%", yaxis_range=[0, 1.1])
+    fig.show()
+    return fig
 
 
 # Old code with normal red to blue colors 
