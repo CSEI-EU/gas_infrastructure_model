@@ -576,16 +576,30 @@ def plot_cost_difference(input_difference, full_scenario_name, scenario, base_pa
 
 # Plot utilization share by country as a bar chart for the investment scenario
 def plot_bar_chart (df):
+    # Add a color column based on Country
+    df["Color"] = df["Country"].apply(
+        lambda x: "green" if x == "Total" else
+                  "orange" if x == "Total_EU" else
+                  "royalblue"
+    )
+
     # Create a bar chart for utilization share
     fig = px.bar(
         df,
         x="Country",
         y="Share",
+        color = "Color",
+        color_discrete_map="identity",
         labels={"Share": "Utilization Share", "Country": "Country"},
         text=df["Share"].apply(lambda x: f"{x:.0%}")
     )
-    fig.update_traces(textposition='outside', marker_color='royalblue')
-    fig.update_layout(yaxis_tickformat=".0%", yaxis_range=[0, 1.1])
+
+    fig.update_traces(textposition='outside')
+    fig.update_layout(
+        yaxis_tickformat=".0%",
+        yaxis_range=[0, 1.1],
+        showlegend=False  # Hide the color legend
+    )
     fig.show()
     return fig
 

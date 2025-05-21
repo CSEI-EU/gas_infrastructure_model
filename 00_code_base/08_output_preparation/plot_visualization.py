@@ -17,8 +17,8 @@ base_path =r"C:\Users\flv.eco\OneDrive - CBS - Copenhagen Business School\Docume
 
 # Import this for save funcroin to work
 # pip install kaleido==0.1.0post1
-save_flow_no_invest = True 
-file_name_no_invest = "outputs_IAEE_2025_run_2035_SP"
+save_flow_no_invest = False 
+file_name_no_invest = "outputs_IAEE_2025_run_2021"
 title_no_invest = "Cross-border NG flows in Stated Policies Scenario in 2035"
 
 save_flow_invest = False
@@ -102,10 +102,11 @@ df_with_coords = add_coordinates(df_with_share)
 
 lng_import_rows = df_with_share[(df_with_share['FromType'] == 'LNG_import') | (df_with_share['ToType'] == 'LNG_import')]
 df_with_imports = df_with_share[(df_with_share['FromType'] == 'LNG_import')]
-
+df_with_imports.drop(df_with_imports[df_with_imports['Flow'] == 0].index, inplace=True)
 # Filter out rows to save
 utilization_df = df_with_imports[["From", "Flow", "Capacity_tot", "Share"]]
 utilization_df.rename(columns={"From": "Country"}, inplace=True)
+utilization_df.sort_values(by="Country", ascending=True, inplace=True)
 
 # Calculate total Flow and Capacity
 total_flow = utilization_df["Flow"].sum()
@@ -174,6 +175,7 @@ df_with_imports_invest.drop(df_with_imports_invest[df_with_imports_invest['Flow'
 # Filter out rows to save
 utilization_invest_df = df_with_imports_invest[["From", "Flow", "Capacity_tot", "Share"]]
 utilization_invest_df.rename(columns={"From": "Country"}, inplace=True)
+utilization_invest_df.sort_values(by="Country", ascending=True, inplace=True)
 
 # Calculate total Flow and Capacity
 total_flow_invest = utilization_invest_df["Flow"].sum()
