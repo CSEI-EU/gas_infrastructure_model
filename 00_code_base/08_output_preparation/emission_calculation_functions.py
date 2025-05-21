@@ -78,7 +78,7 @@ def calculate_domestic_emissions(dfs_emission_factors_dom, supply_shares, supply
     # Return result
     return df[['Node', 'Domestic_Emissions']].reset_index(drop=True)
 
-def combine_total_emissions(import_emissions_df, domestic_emissions_df, only_EU=False):
+def combine_total_emissions(import_emissions_df, domestic_emissions_df, only_EU=False, dfs_EU_countries=None):
     """
     Combines import and domestic emissions into a single DataFrame with totals,
     and removes rows with zero total emissions. Optionally filters to EU countries only.
@@ -87,10 +87,14 @@ def combine_total_emissions(import_emissions_df, domestic_emissions_df, only_EU=
     - import_emissions_df: DataFrame with ['Node', 'Emissions']
     - domestic_emissions_df: DataFrame with ['Node', 'Domestic_Emissions']
     - only_EU: bool, if True filters to EU countries using dfs_EU_countries
+    - dfs_EU_countries: optional DataFrame with 'EU' column and Node as index
     
     Returns:
     - DataFrame with ['Node', 'Import_Emissions', 'Domestic_Emissions', 'Total_Emissions']
       excluding rows where total emissions are zero and optionally non-EU countries.
+    
+    Raises:
+    - ValueError if only_EU is True but dfs_EU_countries is not provided.
     """
     # Rename for clarity
     import_emissions = import_emissions_df.rename(columns={'Emissions': 'Import_Emissions'})
@@ -105,12 +109,15 @@ def combine_total_emissions(import_emissions_df, domestic_emissions_df, only_EU=
     # Remove rows with zero total emissions
     combined = combined[combined['Total_Emissions'] > 0]
 
-    # If only_EU is True, filter using dfs_EU_countries
+    # Optional filtering to EU countries
     if only_EU:
+        if dfs_EU_countries is None:
+            raise ValueError("dfs_EU_countries must be provided when only_EU is True.")
         eu_nodes = dfs_EU_countries[dfs_EU_countries['EU'] == True].index
         combined = combined[combined['Node'].isin(eu_nodes)]
 
     return combined.reset_index(drop=True)[['Node', 'Import_Emissions', 'Domestic_Emissions', 'Total_Emissions']]
+
 
 
 def calculate_total_emissions(combined_emissions_df):
