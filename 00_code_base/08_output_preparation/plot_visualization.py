@@ -6,13 +6,13 @@ import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-os.chdir(r"C:\Users\flv.eco\OneDrive - CBS - Copenhagen Business School\Documents\03_LNG_Cap\hydrogen_grid\00_code_base\08_output_preparation")
+# os.chdir(r"C:\Users\flv.eco\OneDrive - CBS - Copenhagen Business School\Documents\03_LNG_Cap\hydrogen_grid\00_code_base\08_output_preparation")
 from output_visualization_functions import *
 from LNG_external_imports_functions import *
 from year_difference_functions import *
 
-base_path =r"C:\Users\flv.eco\OneDrive - CBS - Copenhagen Business School\Documents\03_LNG_Cap\hydrogen_grid"
-#base_path = r"C:\Users\mar.eco\OneDrive - CBS - Copenhagen Business School\Desktop\hydrogen_grid"
+# base_path =r"C:\Users\flv.eco\OneDrive - CBS - Copenhagen Business School\Documents\03_LNG_Cap\hydrogen_grid"
+base_path = r"C:\Users\mar.eco\OneDrive - CBS - Copenhagen Business School\Desktop\hydrogen_grid"
 #
 
 # Import this for save funcroin to work
@@ -22,8 +22,8 @@ file_name_no_invest = "outputs_IAEE_2025_run_2035_SP"
 title_no_invest = "Cross-border NG flows in Stated Policies Scenario in 2035"
 
 save_flow_invest = False
-file_name_invest = "outputs_IAEE_2025_run_2024_inv"
-title_invest = "Cross-border NG flows with investment in 2024"
+file_name_invest = "outputs_IAEE_2025_run_2024_plus_NO_reduced"
+title_invest = "Cross-border NG flows with supply of Norway reduced"
 
 output_path_no_invest = os.path.join(base_path, "02_plots", "Flow_Results", file_name_no_invest)
 output_path_invest = os.path.join(base_path, "02_plots", "Flow_Results", file_name_invest)
@@ -228,4 +228,4 @@ file_cost_difference_2024 = os.path.join(data_path, "cost_shares_differences_to_
 file_cost_difference_2035 = os.path.join(data_path, "cost_shares_differences_to_2035_SP.xlsx")
 
 
-# plot_cost_difference(file_cost_difference_2035, full_name, scenario, base_path, True)
+plot_cost_difference(file_cost_difference_2035, full_name, scenario, base_path, False)
