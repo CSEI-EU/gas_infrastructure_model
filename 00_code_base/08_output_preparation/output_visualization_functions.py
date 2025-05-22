@@ -210,10 +210,38 @@ LNG_IMPORT_COORDS = {
     'PT': (40.0, -8.0),
     'ES': (40, -1.8),
     'UK': (52.6, -2.5),
-    'NO': (61.0, 10.0),
+    'NO': (61.0, 8.0),
     'EE': (58.6, 26.0),  
     'TR': (38.0, 32.0)
 }
+
+def get_corresponding_scenario(filename):
+    if "outputs_IAEE_2025_run_2024_plus_NO_reduced" in filename:
+        return "2024_NOR"
+    elif "outputs_IAEE_2025_run_2024_plus_no_USA" in filename:
+        return "2024_USA"
+    elif "outputs_IAEE_2025_run_2024_plus_no_QA" in filename:
+        return "2024_QA"
+    elif "outputs_IAEE_2025_run_2024_with_RU" in filename:
+        return "2024_wRU"
+
+    elif "outputs_IAEE_2025_run_2024_inv" in filename:
+        return "2024_InvesPipes"
+    elif "outputs_IAEE_2025_run_2024" in filename:
+        return "2024"
+    
+    elif "outputs_IAEE_2025_run_2035_AP" in filename:
+        return "2035"
+    elif "outputs_IAEE_2025_run_2035_SP" in filename:
+        return "2035"
+
+    else:
+        return filename
+
+def excluded_pipelines(file_path, sheet_name):
+    df_excluded = pd.read_excel(file_path, sheet_name)
+    df_excluded = df_excluded[df_excluded['Commodity'].str.lower()=='methane']
+    return df_excluded[['Source', 'Destination']].rename(columns={'Source': 'From', 'Destination': 'To'})
 
 
 # Color code for pipelines and LNG shares 

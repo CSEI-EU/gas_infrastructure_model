@@ -18,18 +18,21 @@ base_path = r"C:\Users\mar.eco\OneDrive - CBS - Copenhagen Business School\Deskt
 # Import this for save funcroin to work
 # pip install kaleido==0.1.0post1
 save_flow_no_invest = True 
-file_name_no_invest = "outputs_IAEE_2025_run_2035_SP"
-title_no_invest = "Cross-border NG flows in Stated Policies Scenario in 2035"
+file_name_no_invest = "outputs_IAEE_2025_run_2024"
+title_no_invest = "Cross-border NG flows in 2024"
 
-save_flow_invest = False
-file_name_invest = "outputs_IAEE_2025_run_2024_plus_NO_reduced"
-title_invest = "Cross-border NG flows with supply of Norway reduced"
+save_flow_invest = True
+file_name_invest = "outputs_IAEE_2025_run_2024"
+title_invest = "Cross-border NG flows without Russian supply for 2024"
 
 output_path_no_invest = os.path.join(base_path, "02_plots", "Flow_Results", file_name_no_invest)
 output_path_invest = os.path.join(base_path, "02_plots", "Flow_Results", file_name_invest)
 output_path_xlsx = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "02_prepared_results", file_name_no_invest+"_utilization_share.xlsx")
 output_path_invest_xlsx = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "02_prepared_results", file_name_invest+"_utilization_share.xlsx")
 
+input_excluded_pipelines = os.path.join(base_path, "01_data", "01_input_data", "01_raw", "01_Russian_War_Case", "information_pipelines_exclude_from_plots.xlsx")
+baseline_file_name = "outputs_IAEE_2025_run_2021"
+baseline_path = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "01_raw_results", baseline_file_name+ ".xlsx")
 
 input_LNG_file = os.path.join(base_path, "01_data", "01_input_data", "01_raw", "01_Russian_War_Case", "LNG_locations.xlsx")
 output_file_no_invest = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "01_raw_results", file_name_no_invest+ ".xlsx")
@@ -71,10 +74,27 @@ filtered_ports = filtered_ports[filtered_ports['Name of \ninstallation'] != 'Muk
 # Change latitude in Mag Mell (Cork-IE)
 filtered_ports.loc[filtered_ports['Name of \ninstallation'] == 'Mag Mell FSRU', 'Latitude'] += 0.5
 
+# ---------------------------------------------------------------------
+# Plot the baseline graph with added ports and pipelines over the scenarios
+df_pipelines_raw = pd.read_excel(baseline_path)
+df_pipelines_raw = df_pipelines_raw[df_pipelines_raw['Commodity']=='Methane']
+df_pipelines = parse_edges(df_pipelines_raw)
+
+df_pipelines['FromType'] = df_pipelines['From'].apply(label_node_type)
+df_pipelines['ToType'] = df_pipelines['To'].apply(label_node_type)
+df_pipelines['From'] = df_pipelines['From'].apply(extract_country_code)
+df_pipelines['To'] = df_pipelines['To'].apply(extract_country_code)
+
+df_pip_filtered = df_pipelines[df_pipelines['From'].apply(interesting_countries) & df_pipelines['To'].apply(european_countries)]
+df_pip_filtered = df_pip_filtered[(df_pip_filtered['FromType'] == '-') & (df_pip_filtered['ToType'] == '-')]
+df_pip_final = add_coordinates(df_pip_filtered)
+print(df_pip_final.head())
+
+pipeline_edges = df_pip_final['Edge'].dropna().unique()
+pipeline_status = scenario_pipeline_exclusions(input_excluded_pipelines, pipeline_edges)
 
 title_ports = "LNG terminals addition over time"
-plot_ports_by_year(filtered_ports, 2021, 2024, 2035, title=title_ports)
-
+plot_baseline(filtered_ports, df_pip_final, pipeline_status, 2021, 2024, 2035, title=title_ports)
 
 # -----------------------------------------------------------------------
 df = pd.read_excel(output_file_no_invest)
@@ -138,8 +158,19 @@ summary_row_EU = pd.DataFrame({
 utilization_summary = pd.concat([utilization_df, summary_row, summary_row_EU], ignore_index=True)
 bar_fig = plot_bar_chart(utilization_summary)
 
+# Consider the pipelines excluded in each scenario
+scenario_sheet = get_corresponding_scenario(file_name_no_invest)
+excluded_df = excluded_pipelines(input_excluded_pipelines, scenario_sheet)
+
+# Merging t exclude the pipelines not considered 
+df_final = df_with_coords.merge(excluded_df, on=['From', 'To'], how='left', indicator=True)
+df_final = df_final[df_final['_merge'] == 'left_only'].drop(columns=['_merge'])
+
 # Plot
-fig = plot_flow_map(df_with_coords, filtered_ports, df_with_imports, title_no_invest)
+fig = plot_flow_map(df_final, filtered_ports, df_with_imports, title_no_invest)
+
+# Plot
+# fig = plot_flow_map(df_with_coords, filtered_ports, df_with_imports, title_no_invest)
 
 #Save the figure
 if save_flow_no_invest: 
@@ -207,8 +238,19 @@ summary_row_EU_invest = pd.DataFrame({
 utilization_summary_invest = pd.concat([utilization_invest_df, summary_row_invest, summary_row_EU_invest], ignore_index=True)
 bar_fig = plot_bar_chart(utilization_summary_invest)
 
+# Consider the pipelines excluded in each scenario
+scenario_sheet_invest = get_corresponding_scenario(file_name_invest)
+excluded_df_invest = excluded_pipelines(input_excluded_pipelines, scenario_sheet_invest)
+
+# Merging t exclude the pipelines not considered 
+df_clean = df_invest_with_coords.merge(excluded_df_invest, on=['From', 'To'], how='left', indicator=True)
+df_clean = df_clean[df_clean['_merge'] == 'left_only'].drop(columns=['_merge'])
+
+# Plot
+fig = plot_flow_map(df_clean, filtered_ports, df_with_imports, title_invest)
+
 # Plot the flow map for the "investment" scenario
-fig = plot_flow_map(df_invest_with_coords, filtered_ports, df_with_imports_invest, title = title_invest)
+# fig = plot_flow_map(df_invest_with_coords, filtered_ports, df_with_imports_invest, title = title_invest)
 
 if save_flow_invest: 
     fig.write_image(output_path_invest + ".png", width=1135, height=800, scale=2)
@@ -228,4 +270,4 @@ file_cost_difference_2024 = os.path.join(data_path, "cost_shares_differences_to_
 file_cost_difference_2035 = os.path.join(data_path, "cost_shares_differences_to_2035_SP.xlsx")
 
 
-plot_cost_difference(file_cost_difference_2035, full_name, scenario, base_path, False)
+# plot_cost_difference(file_cost_difference_2035, full_name, scenario, base_path, False)
