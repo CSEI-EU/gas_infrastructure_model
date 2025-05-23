@@ -641,6 +641,49 @@ def plot_bar_chart (df):
     return fig
 
 
+def plot_emission_difference(emissions_df,base_year, save): 
+    # Calculate the difference in Total_Emissions to the base year 2021
+    emissions_df['Emissions_Diff_to_'+base_year] = emissions_df['Total_Emissions'] - emissions_df.loc[emissions_df['Scenario'] == base_year, 'Total_Emissions'].values[0]
+    # Set the color for all bars to royal blue
+    emissions_df['Color'] = 'royalblue'
+
+    # Increase figure width and adjust margins to avoid overlap with legend and fit all numbers
+    fig_emissions = px.bar(
+        emissions_df,
+        x='Scenario',
+        y='Emissions_Diff_to_2021',
+        title='Difference in Total Emissions Compared to' + base_year,
+        labels={'Emissions_Diff_to_2021': 'Emissions Difference (to)' + base_year, 'Year': 'Year'},
+        text='Emissions_Diff_to_2021',
+        color='Color',
+        color_discrete_map="identity"
+    )
+    # Format the text to show values in millions, rounded
+    fig_emissions.update_traces(
+        texttemplate='%{text:.1f}M',
+        textposition='outside',
+        text=emissions_df['Emissions_Diff_to_'+base_year].apply(lambda x: round(x/1e6, 1))
+    )
+    fig_emissions.update_layout(
+        uniformtext_minsize=8,
+        uniformtext_mode='hide',
+        width=1100,  # Wider figure
+        height=650,
+        margin=dict(l=60, r=60, t=60, b=60),
+        legend=dict(
+            x=1.02,
+            y=1,
+            xanchor='left',
+            yanchor='top'
+        )
+    )
+
+    fig_emissions.update_layout(uniformtext_minsize=8, uniformtext_mode='hide') 
+
+    fig_emissions.show()
+    if save:
+        output_file = os.path.join(base_path, "02_plots", "Flow_Results", f"emission_difference_{base_year}.png")
+        fig_emissions.write_image(output_file, width=1135, height=800, scale=2)
 
 # Old code with normal red to blue colors 
 '''def flow_color(share):

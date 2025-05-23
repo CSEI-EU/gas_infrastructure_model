@@ -7,9 +7,9 @@ from output_visualization_functions import *
 from LNG_external_imports_functions import *
 from year_difference_functions import *
 
-# base_path =r"C:\Users\flv.eco\OneDrive - CBS - Copenhagen Business School\Documents\03_LNG_Cap\hydrogen_grid"
+base_path =r"C:\Users\flv.eco\OneDrive - CBS - Copenhagen Business School\Documents\03_LNG_Cap\hydrogen_grid"
 # base_path = r"C:\Users\mar.eco\OneDrive - CBS - Copenhagen Business School\Desktop\hydrogen_grid"
-base_path = r"/Users/mathilderogerestrade/Desktop/hydrogen_grid"
+# base_path = r"/Users/mathilderogerestrade/Desktop/hydrogen_grid"
 #
 
 # Import this for save funcroin to work
@@ -232,4 +232,11 @@ file_cost_difference_2021 = os.path.join(data_path, "cost_shares_differences_to_
 file_cost_difference_2024 = os.path.join(data_path, "cost_shares_differences_to_2024.xlsx")
 file_cost_difference_2035 = os.path.join(data_path, "cost_shares_differences_to_2035_SP.xlsx")
 
-# plot_cost_difference(file_cost_difference_2035, full_name, scenario, base_path, False)
+#plot_cost_difference(file_cost_difference_2035, full_name, scenario, base_path, False)
+
+data_path_emissions = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "02_prepared_results")
+input_file_emissions= os.path.join(data_path_emissions, "emission_differences.xlsx")
+
+emissions_diff = pd.read_excel(input_file_emissions)
+
+plot_emission_difference(emissions_diff, "2021", False)
