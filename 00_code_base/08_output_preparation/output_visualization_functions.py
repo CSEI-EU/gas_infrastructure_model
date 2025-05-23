@@ -1,17 +1,8 @@
 # import packages
 import pandas as pd
-import numpy as np
 import os
-import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 import plotly.express as px
-from plotly.subplots import make_subplots
-from plotly.colors import sample_colorscale, diverging
-import plotly.express as px
-
-import pycountry
-from geopy.geocoders import Nominatim
-import time
 
 
 # Separate the Edge column to have which countries is source and which is destination 
@@ -193,6 +184,24 @@ def add_coordinates(df):
     df['Target_lon'] = df['To'].apply(lambda x: coord_map[x]['lon'])
 
     return df
+
+# Put all processing into a single function 
+def process_file(file):
+    df = pd.read_excel(file)
+    df = df[df['Commodity'] == 'Methane']
+    df = parse_edges(df)
+    df['FromType'] = df['From'].apply(label_node_type)
+    df['ToType'] = df['To'].apply(label_node_type)
+    df['From'] = df['From'].apply(extract_country_code)
+    df['To'] = df['To'].apply(extract_country_code)
+    df = df[df['From'].apply(interesting_countries) & df['To'].apply(european_countries)]
+    df_capacity = add_capacity_column(df, file)
+    df_with_share = add_share_column(df_capacity)
+
+    df_final = add_coordinates(df_with_share)
+    df_final['Edge'] = df_final.apply(lambda row: f"{row['From'].strip()}, {row['To'].strip()}", axis=1)
+    return df_final
+
 
 # Points for the LNG import per country 
 LNG_IMPORT_COORDS = {

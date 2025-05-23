@@ -2,27 +2,50 @@
 import pandas as pd
 import os
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-from plotly.colors import sample_colorscale, diverging
-import pycountry
+
+from output_visualization_functions import *
+
+# To identify if the terminals have increase their capacity or if they are completely new
+def identify_terminal_status(df_ports, year):
+    df_ports = df_ports.copy()
+
+    # All terminals across all years
+    location_years = df_ports.groupby(['Latitude', 'Longitude'])['Model Year'].unique().reset_index()
+
+    # See which were already existing before
+    def classify(row):
+        years = row['Model Year']
+        if year in years and any(y < year for y in years):
+            return 'upgraded'
+        elif year in years and all(y >= year for y in years):
+            return 'new'
+        else:
+            return 'old'
+
+    location_years['Status'] = location_years.apply(classify, axis=1)
+
+    # Get the status for each row
+    df_ports = df_ports.merge(location_years[['Latitude', 'Longitude', 'Status']], on=['Latitude', 'Longitude'], how='left')
+    df_ports.loc[df_ports['Model Year'] < year, 'Status'] = 'old'
+
+    return df_ports
+
+
+# -----------------------------------------------------------------------------------------
+# Processing of pipelines excluded for 2024 scenarios 
+def build_edges(df):
+    return set(df.apply(lambda row: f"{row['Source'].strip()}, {row['Destination'].strip()}", axis=1))
+
 
 def scenario_pipeline_exclusions(input_excluded_pipelines, pipeline_edges):
-    def build_edges(df):
-        return set(df.apply(lambda row: f"{row['Source'].strip()}, {row['Destination'].strip()}", axis=1))
-
-    excluded_all_df = pd.read_excel(input_excluded_pipelines, sheet_name='2024')
-    excluded_wRU_df = pd.read_excel(input_excluded_pipelines, sheet_name='2024_wRU')
-    excluded_NOR_df = pd.read_excel(input_excluded_pipelines, sheet_name='2024_NOR')
-
-    excluded_all = build_edges(excluded_all_df)
-    excluded_wRU = build_edges(excluded_wRU_df)
-    excluded_NOR = build_edges(excluded_NOR_df)
+    excluded_all = build_edges(pd.read_excel(input_excluded_pipelines, sheet_name='2024'))
+    excluded_wRU = build_edges(pd.read_excel(input_excluded_pipelines, sheet_name='2024_wRU'))
+    excluded_NOR = build_edges(pd.read_excel(input_excluded_pipelines, sheet_name='2024_NOR'))
 
     pipeline_status = {}
 
     for edge in pipeline_edges:
         edge_clean = edge.replace("'", "").strip() if isinstance(edge, str) else str(edge).strip()
-
         in_all = edge_clean in excluded_all
         in_wRU = edge_clean in excluded_wRU
         in_NOR = edge_clean in excluded_NOR
@@ -37,48 +60,41 @@ def scenario_pipeline_exclusions(input_excluded_pipelines, pipeline_edges):
             pipeline_status[edge] = 'included'
 
     return pipeline_status
+# -----------------------------------------------------------------------------------------
 
-
-def plot_baseline(base_path, df_ports, pipelines_df, pipeline_status, year_1, year_2, year_3, save):
-    output_file = os.path.join(base_path, "02_plots", f"base_map.png")
+# Plot the map according to each scenario year 
+def plot_map(df_ports, pipelines_df, pipeline_status, year, base_path, save):
+    output_path = os.path.join(base_path, "02_plots", f"base_map_{year}.png")
     fig = go.Figure()
 
-    # Ports by year groups
-    ports_by_year = {
-        year_1: df_ports[df_ports['Model Year'] <= year_1],
-        year_2: df_ports[(df_ports['Model Year'] > year_1) & (df_ports['Model Year'] <= year_2)],
-        year_3: df_ports[df_ports['Model Year'] > year_2]
-    }
-    colors = {year_1: 'black', year_2: 'blue', year_3: 'green'}
-
-    for year, ports in ports_by_year.items():
+    # LNG Terminals
+    color_map_ports = {'old': 'black', 'upgraded': 'blue', 'new': 'green'}
+    for status in ['old', 'upgraded', 'new']:
+        ports = df_ports[df_ports['Status'] == status]
         fig.add_trace(go.Scattergeo(
-            lon=ports['Longitude'], 
+            lon=ports['Longitude'],
             lat=ports['Latitude'],
             mode='markers',
-            marker=dict(size=6, color=colors[year], symbol='circle'),
-            name=f'LNG terminal in {year}',
-            showlegend=True
+            marker=dict(size=6, color=color_map_ports[status], symbol='circle'),
+            name=f'LNG Terminal ({status})'
         ))
 
-    # For legend tracking to avoid duplicates
-    legend_shown = set()
+    # Pipelines
     color_map = {
-    'included': 'gray',
-    'excluded_for_all': 'red',
-    'excluded_for_NOR_only': 'purple',
-    'excluded_for_wRU_only': 'orange',
-    'included_in_wRU_only': 'red',
+        'included': 'gray',
+        'excluded_for_all': 'red',
+        'excluded_for_NOR_only': 'purple',
+        'included_in_wRU_only': 'red',
     }
 
     status_name_map = {
-    'included': 'Included',
-    'excluded_for_all': 'Excluded in all',
-    'excluded_for_NOR_only': 'Excluded in Norway scenario only',
-    'excluded_for_wRU_only': 'Excluded in Russia scenario only',
-    'included_in_wRU_only': 'Included only in Russia scenario',
+        'included': 'Included',
+        'excluded_for_all': 'Excluded in all',
+        'excluded_for_NOR_only': 'Excluded in Norway scenario only',
+        'included_in_wRU_only': 'Included only in Russia scenario',
     }
 
+    legend_shown = set()
     for _, row in pipelines_df.iterrows():
         edge = row['Edge']
         status = pipeline_status.get(edge, 'included')
@@ -119,7 +135,7 @@ def plot_baseline(base_path, df_ports, pipelines_df, pipeline_status, year_1, ye
     )
 
     if save:
-        fig.write_image(output_file, width=1135, height=800, scale=2)
+        fig.write_image(output_path, width=1135, height=800, scale=2)
     else:
         fig.show()
 
