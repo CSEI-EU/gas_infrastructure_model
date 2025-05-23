@@ -1,5 +1,6 @@
 # import packages
 import pandas as pd
+import os
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from plotly.colors import sample_colorscale, diverging
@@ -20,25 +21,26 @@ def scenario_pipeline_exclusions(input_excluded_pipelines, pipeline_edges):
     pipeline_status = {}
 
     for edge in pipeline_edges:
-        edge_clean = str(edge).strip()
+        edge_clean = edge.replace("'", "").strip() if isinstance(edge, str) else str(edge).strip()
 
         in_all = edge_clean in excluded_all
         in_wRU = edge_clean in excluded_wRU
         in_NOR = edge_clean in excluded_NOR
 
-        if in_all and in_wRU and in_NOR:
-            pipeline_status[edge] = 'excluded_all'
-        elif in_wRU and not in_all and not in_NOR:
-            pipeline_status[edge] = 'excluded_wRU_only'
-        elif in_NOR and not in_all and not in_wRU:
-            pipeline_status[edge] = 'excluded_NOR_only'
+        if in_all and not in_wRU:
+            pipeline_status[edge] = 'included_in_wRU_only'
+        elif in_all:
+            pipeline_status[edge] = 'excluded_for_all'
+        elif in_NOR:
+            pipeline_status[edge] = 'excluded_for_NOR_only'
         else:
             pipeline_status[edge] = 'included'
 
     return pipeline_status
 
 
-def plot_baseline(df_ports, pipelines_df, pipeline_status, year_1, year_2, year_3, title):
+def plot_baseline(base_path, df_ports, pipelines_df, pipeline_status, year_1, year_2, year_3, save):
+    output_file = os.path.join(base_path, "02_plots", f"base_map.png")
     fig = go.Figure()
 
     # Ports by year groups
@@ -47,11 +49,12 @@ def plot_baseline(df_ports, pipelines_df, pipeline_status, year_1, year_2, year_
         year_2: df_ports[(df_ports['Model Year'] > year_1) & (df_ports['Model Year'] <= year_2)],
         year_3: df_ports[df_ports['Model Year'] > year_2]
     }
-    colors = {year_1: 'gray', year_2: 'blue', year_3: 'green'}
+    colors = {year_1: 'black', year_2: 'blue', year_3: 'green'}
 
     for year, ports in ports_by_year.items():
         fig.add_trace(go.Scattergeo(
-            lon=ports['Longitude'], lat=ports['Latitude'],
+            lon=ports['Longitude'], 
+            lat=ports['Latitude'],
             mode='markers',
             marker=dict(size=6, color=colors[year], symbol='circle'),
             name=f'LNG terminal in {year}',
@@ -60,12 +63,20 @@ def plot_baseline(df_ports, pipelines_df, pipeline_status, year_1, year_2, year_
 
     # For legend tracking to avoid duplicates
     legend_shown = set()
-
     color_map = {
-        'included': 'gray',
-        'excluded_all': 'red',
-        'excluded_wRU_only': 'orange',
-        'excluded_NOR_only': 'purple',
+    'included': 'gray',
+    'excluded_for_all': 'red',
+    'excluded_for_NOR_only': 'purple',
+    'excluded_for_wRU_only': 'orange',
+    'included_in_wRU_only': 'red',
+    }
+
+    status_name_map = {
+    'included': 'Included',
+    'excluded_for_all': 'Excluded in all',
+    'excluded_for_NOR_only': 'Excluded in Norway scenario only',
+    'excluded_for_wRU_only': 'Excluded in Russia scenario only',
+    'included_in_wRU_only': 'Included only in Russia scenario',
     }
 
     for _, row in pipelines_df.iterrows():
@@ -76,17 +87,20 @@ def plot_baseline(df_ports, pipelines_df, pipeline_status, year_1, year_2, year_
         show_legend = status not in legend_shown
         legend_shown.add(status)
 
+        line_style = dict(width=2, color=color)
+        if status == 'included_in_wRU_only':
+            line_style['dash'] = 'dot'
+
         fig.add_trace(go.Scattergeo(
             lon=[row['Source_lon'], row['Target_lon']],
             lat=[row['Source_lat'], row['Target_lat']],
             mode='lines',
-            line=dict(width=2, color=color),
-            name=status.replace('_', ' ').capitalize(),
+            line=line_style,
+            name=status_name_map.get(status, 'Included'),
             showlegend=show_legend
         ))
 
     fig.update_layout(
-        title=title,
         geo=dict(
             scope='world',
             projection_type='natural earth',
@@ -104,4 +118,9 @@ def plot_baseline(df_ports, pipelines_df, pipeline_status, year_1, year_2, year_
         height=650,
     )
 
-    fig.show()
+    if save:
+        fig.write_image(output_file, width=1135, height=800, scale=2)
+    else:
+        fig.show()
+
+    return fig

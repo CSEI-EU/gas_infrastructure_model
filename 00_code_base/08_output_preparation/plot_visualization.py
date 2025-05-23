@@ -94,7 +94,7 @@ pipeline_edges = df_pip_final['Edge'].dropna().unique()
 pipeline_status = scenario_pipeline_exclusions(input_excluded_pipelines, pipeline_edges)
 
 title_ports = "LNG terminals addition over time"
-plot_baseline(filtered_ports, df_pip_final, pipeline_status, 2021, 2024, 2035, title=title_ports)
+plot_baseline(base_path, filtered_ports, df_pip_final, pipeline_status, 2021, 2024, 2035, True)
 
 # -----------------------------------------------------------------------
 df = pd.read_excel(output_file_no_invest)
