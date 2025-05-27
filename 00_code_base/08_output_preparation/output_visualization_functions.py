@@ -641,7 +641,7 @@ def plot_bar_chart (df):
     return fig
 
 
-def plot_emission_difference(emissions_df,base_year, save): 
+def plot_emission_difference(emissions_df,base_year,path, save): 
     # Calculate the difference in Total_Emissions to the base year 2021
     emissions_df['Emissions_Diff_to_'+base_year] = emissions_df['Total_Emissions'] - emissions_df.loc[emissions_df['Scenario'] == base_year, 'Total_Emissions'].values[0]
     # Set the color for all bars to royal blue
@@ -682,7 +682,7 @@ def plot_emission_difference(emissions_df,base_year, save):
 
     fig_emissions.show()
     if save:
-        output_file = os.path.join(base_path, "02_plots", "Flow_Results", f"emission_difference_{base_year}.png")
+        output_file = os.path.join(path, "02_plots", "Flow_Results", f"emission_difference_{base_year}.png")
         fig_emissions.write_image(output_file, width=1135, height=800, scale=2)
 
 # Old code with normal red to blue colors 

@@ -239,4 +239,4 @@ input_file_emissions= os.path.join(data_path_emissions, "emission_differences.xl
 
 emissions_diff = pd.read_excel(input_file_emissions)
 
-plot_emission_difference(emissions_diff, "2021", False)
+plot_emission_difference(emissions_diff, "2021",base_path, False)
