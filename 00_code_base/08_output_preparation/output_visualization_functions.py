@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import plotly.graph_objects as go
 import plotly.express as px
+import pycountry
 
 
 # Separate the Edge column to have which countries is source and which is destination 
@@ -545,7 +546,7 @@ def plot_cost_map(input_path, scenario, base_path, save):
 
 
 
-def plot_cost_difference(input_difference, full_scenario_name, scenario, base_path, save):
+def plot_cost_difference(input_difference, full_scenario_name, scenario, base_path, middle_colorbar, save):
     output_file = os.path.join(base_path, "02_plots", "Costs_Results", f"cost_difference_heatmap_{scenario}.png")
     
     df = pd.read_excel(input_difference, sheet_name="Summary_Total_Cost")
@@ -561,7 +562,7 @@ def plot_cost_difference(input_difference, full_scenario_name, scenario, base_pa
     # Green to red 
     colorscale = [
     [0.0, 'rgb(0, 128, 0)'],      # Green 
-    [0.65, 'rgb(255, 255, 255)'],  # White 
+    [middle_colorbar, 'rgb(255, 255, 255)'],  # White 
     [1.0, 'rgb(255, 0, 0)'],      # Red 
     ]
 

@@ -7,9 +7,8 @@ from output_visualization_functions import *
 from LNG_external_imports_functions import *
 from year_difference_functions import *
 
-base_path =r"C:\Users\flv.eco\OneDrive - CBS - Copenhagen Business School\Documents\03_LNG_Cap\hydrogen_grid"
-# base_path = r"C:\Users\mar.eco\OneDrive - CBS - Copenhagen Business School\Desktop\hydrogen_grid"
-# base_path = r"/Users/mathilderogerestrade/Desktop/hydrogen_grid"
+# base_path =r"C:\Users\flv.eco\OneDrive - CBS - Copenhagen Business School\Documents\03_LNG_Cap\hydrogen_grid"
+base_path = r"C:\Users\mar.eco\OneDrive - CBS - Copenhagen Business School\Desktop\hydrogen_grid"
 #
 
 # Import this for save funcroin to work
@@ -97,9 +96,9 @@ pipelines_2035 = df_2035[(df_2035['FromType'] == '-') & (df_2035['ToType'] == '-
 pipeline_status_2035 = {edge: 'included' for edge in pipelines_2035['Edge']}
 
 
-plot_map(df_ports_2021, pipelines_2021, pipeline_status_2021, 2021, base_path, False)
-plot_map(df_ports_2024, pipelines_2024, pipeline_status_2024, 2024, base_path, False)
-plot_map(df_ports_2035, pipelines_2035, pipeline_status_2035, 2035, base_path, False)
+#plot_map(df_ports_2021, pipelines_2021, pipeline_status_2021, 2021, base_path, False)
+#plot_map(df_ports_2024, pipelines_2024, pipeline_status_2024, 2024, base_path, False)
+#plot_map(df_ports_2035, pipelines_2035, pipeline_status_2035, 2035, base_path, False)
 
 # -----------------------------------------------------------------------
 df_no_invest = process_file(output_file_no_invest)
@@ -224,19 +223,23 @@ if save_flow_invest:
 
 # ---------------------------------------------------------------------
 data_path = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "02_prepared_results")
-scenario = "2035_AP_to_SP"
-full_name = "costs_shares_IAEE_2025_run_2035_AP"
-input_file_cost = os.path.join(data_path, "costs_shares_IAEE_2025_run_2035_AP.xlsx")
+scenario = "2024_inv"
+full_name = "costs_shares_IAEE_2025_run_2024_inv"
+input_file_cost = os.path.join(data_path, "costs_shares_IAEE_2025_run_2024_inv.xlsx")
 
 file_cost_difference_2021 = os.path.join(data_path, "cost_shares_differences_to_2021.xlsx")
 file_cost_difference_2024 = os.path.join(data_path, "cost_shares_differences_to_2024.xlsx")
 file_cost_difference_2035 = os.path.join(data_path, "cost_shares_differences_to_2035_SP.xlsx")
 
-#plot_cost_difference(file_cost_difference_2035, full_name, scenario, base_path, False)
+colorbar_zero_2021 = 0.32
+colorbar_zero_2024 = 0.65
+colorbar_zero_2025 = 0.7
+
+plot_cost_difference(file_cost_difference_2024, full_name, scenario, base_path, colorbar_zero_2024, True)
 
 data_path_emissions = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "02_prepared_results")
 input_file_emissions= os.path.join(data_path_emissions, "emission_differences.xlsx")
 
 emissions_diff = pd.read_excel(input_file_emissions)
 
-plot_emission_difference(emissions_diff, "2021",base_path, False)
+# plot_emission_difference(emissions_diff, "2021",base_path, False)
