@@ -254,4 +254,4 @@ emissions_diff.loc[emissions_diff['Scenario'] == '2035_AP', 'Scenario'] = '2035 
 
 emissions_diff.sort_values(by='Scenario', inplace=True)
 
-plot_emission_difference(emissions_diff, "2021",'2021 - 1. Baseline', base_path, True)
+plot_emission_difference(emissions_diff, "2021",'2021 - 1. Baseline', base_path, False)
