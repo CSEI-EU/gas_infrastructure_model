@@ -7,17 +7,17 @@ from output_visualization_functions import *
 from LNG_external_imports_functions import *
 from year_difference_functions import *
 
-base_path =r"C:\Users\flv.eco\OneDrive - CBS - Copenhagen Business School\Documents\03_LNG_Cap\hydrogen_grid"
-# base_path = r"C:\Users\mar.eco\OneDrive - CBS - Copenhagen Business School\Desktop\hydrogen_grid"
+# base_path =r"C:\Users\flv.eco\OneDrive - CBS - Copenhagen Business School\Documents\03_LNG_Cap\hydrogen_grid"
+base_path = r"C:\Users\mar.eco\OneDrive - CBS - Copenhagen Business School\Desktop\hydrogen_grid"
 #
 
 # Import this for save funcroin to work
 # pip install kaleido==0.1.0post1
-save_flow_no_invest = True 
+save_flow_no_invest = False 
 file_name_no_invest = "outputs_IAEE_2025_run_2024"
 title_no_invest = "Cross-border NG flows in 2024"
 
-save_flow_invest = True
+save_flow_invest = False
 file_name_invest = "outputs_IAEE_2025_run_2024"
 title_invest = "Cross-border NG flows without Russian supply for 2024"
 
@@ -181,6 +181,7 @@ total_capacity_invest = utilization_invest_df["Capacity_tot"].sum()
 total_flow_EU_invest  = utilization_invest_df[utilization_invest_df.Country.apply(eu_countries)].Flow.sum()
 total_capacity_EU_invest  = utilization_invest_df[utilization_invest_df.Country.apply(eu_countries)].Capacity_tot.sum()
 
+
 # Calculate utilization share
 total_share_invest = total_flow_invest / total_capacity_invest if total_capacity_invest != 0 else 0
 total_share_EU_invest = total_flow_EU_invest / total_capacity_EU_invest if total_capacity_EU_invest != 0 else 0
@@ -234,11 +235,11 @@ colorbar_zero_2021 = 0.32
 colorbar_zero_2024 = 0.65
 colorbar_zero_2025 = 0.7
 
-# plot_cost_difference(file_cost_difference_2024, full_name, scenario, base_path, colorbar_zero_2024, True)
+plot_cost_difference(file_cost_difference_2024, full_name, scenario, base_path, colorbar_zero_2024, True)
 
 data_path_emissions = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "02_prepared_results")
 input_file_emissions= os.path.join(data_path_emissions, "emission_differences.xlsx")
 
 emissions_diff = pd.read_excel(input_file_emissions)
 
-plot_emission_difference(emissions_diff, "2021",base_path, False)
+# plot_emission_difference(emissions_diff, "2021",base_path, False)

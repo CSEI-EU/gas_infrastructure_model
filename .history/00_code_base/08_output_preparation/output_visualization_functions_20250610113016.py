@@ -654,7 +654,7 @@ def plot_emission_difference(emissions_df,base_year,path, save):
         x='Scenario',
         y='Emissions_Diff_to_2021',
         title='Difference in Total Emissions Compared to' + base_year,
-        labels={'Emissions_Diff_to_2021': 'Emissions Difference to ' + base_year + '[t]', 'Year': 'Year'},
+        labels={'Emissions_Diff_to_2021': 'Emissions Difference (to)' + base_year, 'Year': 'Year'},
         text='Emissions_Diff_to_2021',
         color='Color',
         color_discrete_map="identity"
