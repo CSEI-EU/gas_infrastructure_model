@@ -13,11 +13,11 @@ base_path = r"C:\Users\mar.eco\OneDrive - CBS - Copenhagen Business School\Deskt
 
 # Import this for save funcroin to work
 # pip install kaleido==0.1.0post1
-save_flow_no_invest = False 
+save_flow_no_invest = True 
 file_name_no_invest = "outputs_IAEE_2025_run_2024"
 title_no_invest = "Cross-border NG flows in 2024"
 
-save_flow_invest = False
+save_flow_invest = True
 file_name_invest = "outputs_IAEE_2025_run_2024_inv"
 title_invest = "Cross-border NG flows without Russian supply for 2024"
 
@@ -219,9 +219,9 @@ with open(json_file_path, "wb") as f:
 print("JSON File downloaded successfully")
 
 data_path = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "02_prepared_results")
-scenario = "2024_plus_NO_reduced"
-full_name = "costs_shares_IAEE_2025_run_2024_plus_NO_reduced"
-input_file_cost = os.path.join(data_path, "costs_shares_IAEE_2025_run_2024_plus_NO_reduced.xlsx")
+scenario = "2024"
+full_name = "costs_shares_IAEE_2025_run_2024"
+input_file_cost = os.path.join(data_path, "costs_shares_IAEE_2025_run_2024.xlsx")
 
 file_cost_difference_2021 = os.path.join(data_path, "cost_shares_differences_to_2021.xlsx")
 file_cost_difference_2024 = os.path.join(data_path, "cost_shares_differences_to_2024.xlsx")
@@ -229,9 +229,11 @@ file_cost_difference_2035 = os.path.join(data_path, "cost_shares_differences_to_
 
 colorbar_zero_2021 = 0.32
 colorbar_zero_2024 = 0.65
-colorbar_zero_2025 = 0.7
+colorbar_zero_2035 = 0.77
 
-plot_cost_difference(file_cost_difference_2024, full_name, scenario, base_path, colorbar_zero_2024, json_file_path, True)
+
+plot_cost_map(input_file_cost, scenario, base_path, json_file_path, True)
+plot_cost_difference(file_cost_difference_2021, full_name, scenario, base_path, colorbar_zero_2021, json_file_path, True)
 
 # ---------------------------------------------------------------------
 data_path_emissions = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "02_prepared_results")

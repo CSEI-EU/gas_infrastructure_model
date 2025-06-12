@@ -255,12 +255,9 @@ def excluded_pipelines(file_path, sheet_name):
 
     df_excluded = pd.read_excel(file_path, sheet_name)
     df_excluded = df_excluded[df_excluded['Commodity'].str.lower() == 'methane']
-
-    # Rename the columns first, then check if Russia is in 
     df_excluded = df_excluded[['Source', 'Destination']].rename(columns={'Source': 'From', 'Destination': 'To'})
-    df_excluded['InvolvesRussia'] = df_excluded.apply(lambda row: 'Russia' in [row['From'], row['To']], axis=1)
-
     return df_excluded
+
 
 # To process pipelines with Russia and excluded ones 
 def process_pipelines(df, file_name, input_excluded_pipelines):
@@ -269,20 +266,18 @@ def process_pipelines(df, file_name, input_excluded_pipelines):
 
     if scenario_sheet in scenarios_with_exclusion:
         excluded_df = excluded_pipelines(input_excluded_pipelines, scenario_sheet)
+        
         if excluded_df is not None:
             # Merge to identify excluded pipelines but keep them in the DataFrame
             df_final = df.merge(excluded_df, on=['From', 'To'], how='left', indicator=True)
             df_final['Excluded'] = df_final['_merge'] == 'both'
-            df_final['InvolvesRussia'] = df_final['InvolvesRussia'].fillna(False)
             df_final = df_final.drop(columns=['_merge'])
         else:
             df_final = df
             df_final['Excluded'] = False
-            df_final['InvolvesRussia'] = False
     else:
         df_final = df
         df_final['Excluded'] = False
-        df_final['InvolvesRussia'] = False
 
     return df_final
 
@@ -318,12 +313,8 @@ def plot_flow_map(df, ports, imports, title):
     df_pipelines = df[(df['FromType'] == '-') & (df['ToType'] == '-')]
  
     for _, row in df_pipelines.iterrows():
-        if row.get('Excluded', False):
-            line_color = 'black' if row.get('InvolvesRussia', False) else 'gray'
-        else:
-            line_color = flow_color(row['Share'])
+        line_color = 'gray' if row.get('Excluded', False) else flow_color(row['Share'])
 
-        # line_color = flow_color(row['Share'])
         line_width = max(row['Flow'] / 100000, 1.1) if row['Flow'] > 0 else 1
  
         fig.add_trace(go.Scattergeo(
@@ -353,6 +344,14 @@ def plot_flow_map(df, ports, imports, title):
         #hoverinfo='skip',
         name='LNG terminal',
         showlegend=True,
+    ))
+
+    fig.add_trace(go.Scattergeo(
+        lon=[None],
+        lat=[None],
+        mode='lines',
+        line=dict(width=2, color='gray'),
+        name='Not included'
     ))
  
     # Add LNG import points
@@ -460,7 +459,7 @@ def plot_flow_map(df, ports, imports, title):
                 thicknessmode = 'pixels',
                 thickness = 10,
                 x=0.964,  
-                y=0.813,  
+                y=0.773,  
                 xanchor='right',
                 yanchor='top',
                 bgcolor='rgba(255, 255, 255, 0.8)',
@@ -530,11 +529,9 @@ def convert_to_alpha3(iso2):
 def plot_cost_map(input_path, scenario, base_path, geojson_path, save):
     output_file = os.path.join(base_path, "02_plots", "Costs_Results", f"cost_heatmap_{scenario}.png")
 
-    # Load the GeoJSON
     with open(geojson_path, 'r', encoding='utf-8') as f:
         custom_geojson = json.load(f)
 
-    # Load Excel data
     df = pd.read_excel(input_path)
     df.columns = df.columns.str.strip()
 
@@ -545,7 +542,7 @@ def plot_cost_map(input_path, scenario, base_path, geojson_path, save):
     df_ukraine = df[df["Node_ISO3"] == "UKR"]
     df_rest = df[df["Node_ISO3"] != "UKR"]
 
-    color_range = [11000, 35000]  # Fixed color range
+    color_range = [11000, 35000]  
     # color_range = [df["Total Cost"].min(), df["Total Cost"].max()]
 
     fig = go.Figure()
@@ -569,7 +566,7 @@ def plot_cost_map(input_path, scenario, base_path, geojson_path, save):
         name="Rest of Europe"
     ))
 
-    # Ukraine from custom GeoJSON
+    # Ukraine from GeoJSON
     fig.add_trace(go.Choropleth(
         geojson=custom_geojson,
         featureidkey="properties.GID_0",
@@ -579,7 +576,7 @@ def plot_cost_map(input_path, scenario, base_path, geojson_path, save):
         zmin=color_range[0],
         zmax=color_range[1],
         marker_line_color='rgb(180, 200, 230)',
-        marker_line_width=0.5,
+        marker_line_width=0,
         showscale=False,
         name="Ukraine"
     ))
@@ -628,8 +625,8 @@ def plot_cost_difference(input_difference, full_scenario_name, scenario, base_pa
     df_rest = df[df["Node_ISO3"] != "UKR"]
 
     z = df[full_scenario_name]
-    # color_range = [z.min(), z.max()]
-    color_range = [-13000, 7000]
+    color_range = [z.min(), z.max()]
+    #color_range = [-13000, 7000]
 
     # Green to red 
     colorscale = [
