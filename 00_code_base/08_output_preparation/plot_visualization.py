@@ -15,13 +15,11 @@ base_path = r"C:\Users\mar.eco\OneDrive - CBS - Copenhagen Business School\Deskt
 # pip install kaleido==0.1.0post1
 
 years = [2021, 2024, 2035]
-save_flow_no_invest = True 
+save_flow_no_invest = False 
 file_name_no_invest = "outputs_IAEE_2025_run_2035_AP"
-title_no_invest = "Cross-border NG flows in 2024 with limited Russian supply"
 
-save_flow_invest = True
+save_flow_invest = False
 file_name_invest = "outputs_IAEE_2025_run_2035_SP"
-title_invest = "Cross-border NG flows for 2035"
 
 output_path_no_invest = os.path.join(base_path, "02_plots", "Flow_Results", file_name_no_invest)
 output_path_invest = os.path.join(base_path, "02_plots", "Flow_Results", file_name_invest)
