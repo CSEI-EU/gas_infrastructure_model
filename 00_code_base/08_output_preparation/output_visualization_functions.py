@@ -246,12 +246,44 @@ def get_corresponding_scenario(filename):
         return "2035"
 
     else:
-        return filename
+        return None
 
 def excluded_pipelines(file_path, sheet_name):
+    if sheet_name is None:
+        return None
+
     df_excluded = pd.read_excel(file_path, sheet_name)
-    df_excluded = df_excluded[df_excluded['Commodity'].str.lower()=='methane']
-    return df_excluded[['Source', 'Destination']].rename(columns={'Source': 'From', 'Destination': 'To'})
+    df_excluded = df_excluded[df_excluded['Commodity'].str.lower() == 'methane']
+
+    # Rename the columns first, then check if Russia is in 
+    df_excluded = df_excluded[['Source', 'Destination']].rename(columns={'Source': 'From', 'Destination': 'To'})
+    df_excluded['InvolvesRussia'] = df_excluded.apply(lambda row: 'Russia' in [row['From'], row['To']], axis=1)
+
+    return df_excluded
+
+# To process pipelines with Russia and excluded ones 
+def process_pipelines(df, file_name, input_excluded_pipelines):
+    scenario_sheet = get_corresponding_scenario(file_name)
+    scenarios_with_exclusion = ["2024_NOR", "2024_USA", "2024_QA", "2024_wRU", "2024_InvesPipes", "2024", "2035"]
+
+    if scenario_sheet in scenarios_with_exclusion:
+        excluded_df = excluded_pipelines(input_excluded_pipelines, scenario_sheet)
+        if excluded_df is not None:
+            # Merge to identify excluded pipelines but keep them in the DataFrame
+            df_final = df.merge(excluded_df, on=['From', 'To'], how='left', indicator=True)
+            df_final['Excluded'] = df_final['_merge'] == 'both'
+            df_final['InvolvesRussia'] = df_final['InvolvesRussia'].fillna(False)
+            df_final = df_final.drop(columns=['_merge'])
+        else:
+            df_final = df
+            df_final['Excluded'] = False
+            df_final['InvolvesRussia'] = False
+    else:
+        df_final = df
+        df_final['Excluded'] = False
+        df_final['InvolvesRussia'] = False
+
+    return df_final
 
 
 # Color code for pipelines and LNG shares 
@@ -285,7 +317,12 @@ def plot_flow_map(df, ports, imports, title):
     df_pipelines = df[(df['FromType'] == '-') & (df['ToType'] == '-')]
  
     for _, row in df_pipelines.iterrows():
-        line_color = flow_color(row['Share'])
+        if row.get('Excluded', False):
+            line_color = 'black' if row.get('InvolvesRussia', False) else 'gray'
+        else:
+            line_color = flow_color(row['Share'])
+
+        # line_color = flow_color(row['Share'])
         line_width = max(row['Flow'] / 100000, 1.1) if row['Flow'] > 0 else 1
  
         fig.add_trace(go.Scattergeo(

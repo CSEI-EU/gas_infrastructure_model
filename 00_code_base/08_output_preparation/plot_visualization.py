@@ -7,14 +7,14 @@ from output_visualization_functions import *
 from LNG_external_imports_functions import *
 from year_difference_functions import *
 
-base_path =r"C:\Users\flv.eco\OneDrive - CBS - Copenhagen Business School\Documents\03_LNG_Cap\hydrogen_grid"
-# base_path = r"C:\Users\mar.eco\OneDrive - CBS - Copenhagen Business School\Desktop\hydrogen_grid"
+# base_path =r"C:\Users\flv.eco\OneDrive - CBS - Copenhagen Business School\Documents\03_LNG_Cap\hydrogen_grid"
+base_path = r"C:\Users\mar.eco\OneDrive - CBS - Copenhagen Business School\Desktop\hydrogen_grid"
 #
 
 # Import this for save funcroin to work
 # pip install kaleido==0.1.0post1
-save_flow_no_invest = True 
-file_name_no_invest = "outputs_IAEE_2025_run_2035_SP"
+save_flow_no_invest = False 
+file_name_no_invest = "outputs_IAEE_2025_run_2024"
 title_no_invest = "Cross-border NG flows in 2024"
 
 save_flow_invest = False
@@ -138,21 +138,13 @@ summary_row_EU = pd.DataFrame({
 
 # Append the summary to the DataFrame
 utilization_summary = pd.concat([utilization_df, summary_row, summary_row_EU], ignore_index=True)
-bar_fig = plot_bar_chart(utilization_summary)
+# bar_fig = plot_bar_chart(utilization_summary)
 
 # Consider the pipelines excluded in each scenario
-scenario_sheet = get_corresponding_scenario(file_name_no_invest)
-excluded_df = excluded_pipelines(input_excluded_pipelines, scenario_sheet)
-
-# Merging t exclude the pipelines not considered 
-df_final = df_no_invest.merge(excluded_df, on=['From', 'To'], how='left', indicator=True)
-df_final = df_final[df_final['_merge'] == 'left_only'].drop(columns=['_merge'])
+df_final = process_pipelines(df_no_invest, file_name_no_invest, input_excluded_pipelines)
 
 # Plot
 fig = plot_flow_map(df_final, filtered_ports, df_with_imports, title_no_invest)
-
-# Plot
-# fig = plot_flow_map(df_no_invest, filtered_ports, df_with_imports, title_no_invest)
 
 #Save the figure
 if save_flow_no_invest: 
@@ -203,15 +195,10 @@ summary_row_EU_invest = pd.DataFrame({
 
 # Append the summary to the DataFrame
 utilization_summary_invest = pd.concat([utilization_invest_df, summary_row_invest, summary_row_EU_invest], ignore_index=True)
-bar_fig = plot_bar_chart(utilization_summary_invest)
+# bar_fig = plot_bar_chart(utilization_summary_invest)
 
 # Consider the pipelines excluded in each scenario
-scenario_sheet_invest = get_corresponding_scenario(file_name_invest)
-excluded_df_invest = excluded_pipelines(input_excluded_pipelines, scenario_sheet_invest)
-
-# Merging t exclude the pipelines not considered 
-df_clean = df_invest.merge(excluded_df_invest, on=['From', 'To'], how='left', indicator=True)
-df_clean = df_clean[df_clean['_merge'] == 'left_only'].drop(columns=['_merge'])
+df_clean = process_pipelines(df_invest, file_name_invest, input_excluded_pipelines)
 
 # Plot
 fig = plot_flow_map(df_clean, filtered_ports, df_with_imports, title_invest)
@@ -236,7 +223,7 @@ colorbar_zero_2021 = 0.32
 colorbar_zero_2024 = 0.65
 colorbar_zero_2025 = 0.7
 
-# plot_cost_difference(file_cost_difference_2024, full_name, scenario, base_path, colorbar_zero_2024, True)
+plot_cost_difference(file_cost_difference_2024, full_name, scenario, base_path, colorbar_zero_2024, False)
 
 data_path_emissions = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "02_prepared_results")
 input_file_emissions= os.path.join(data_path_emissions, "emission_differences.xlsx")
@@ -254,4 +241,4 @@ emissions_diff.loc[emissions_diff['Scenario'] == '2035_AP', 'Scenario'] = '2035 
 
 emissions_diff.sort_values(by='Scenario', inplace=True)
 
-plot_emission_difference(emissions_diff, "2021",'2021 - 1. Baseline', base_path, False)
+# plot_emission_difference(emissions_diff, "2021",'2021 - 1. Baseline', base_path, False)
