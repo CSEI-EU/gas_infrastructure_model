@@ -13,13 +13,15 @@ base_path = r"C:\Users\mar.eco\OneDrive - CBS - Copenhagen Business School\Deskt
 
 # Import this for save funcroin to work
 # pip install kaleido==0.1.0post1
+
+years = [2021, 2024, 2035]
 save_flow_no_invest = True 
-file_name_no_invest = "outputs_IAEE_2025_run_2024"
-title_no_invest = "Cross-border NG flows in 2024"
+file_name_no_invest = "outputs_IAEE_2025_run_2035_AP"
+title_no_invest = "Cross-border NG flows in 2024 with limited Russian supply"
 
 save_flow_invest = True
-file_name_invest = "outputs_IAEE_2025_run_2024_inv"
-title_invest = "Cross-border NG flows without Russian supply for 2024"
+file_name_invest = "outputs_IAEE_2025_run_2035_SP"
+title_invest = "Cross-border NG flows for 2035"
 
 output_path_no_invest = os.path.join(base_path, "02_plots", "Flow_Results", file_name_no_invest)
 output_path_invest = os.path.join(base_path, "02_plots", "Flow_Results", file_name_invest)
@@ -60,7 +62,6 @@ country_map = {
 
 # -----------------------------------------------------------------------
 # LNG terminals to show on the map 
-years = [2024, 2021, 2035]
 filtered_ports = filter_lng_ports_by_year(input_LNG_file, years)
 
 # Change in Kollsnes 2 lon and Mukran lat 
@@ -75,13 +76,15 @@ filtered_ports = filtered_ports[filtered_ports['Name of \ninstallation'] != 'Muk
 # Change latitude in Mag Mell (Cork-IE)
 filtered_ports.loc[filtered_ports['Name of \ninstallation'] == 'Mag Mell FSRU', 'Latitude'] += 0.5
 
+countries_with_terminals = get_countries_with_terminals(filtered_ports)
+countries_iso2 = set(filter(None, [country_name_to_code(name) for name in countries_with_terminals]))
+filtered_LNG_IMPORT_COORDS = { country: coords for country, coords in LNG_IMPORT_COORDS.items() if country in countries_iso2}
 
 # -----------------------------------------------------------------
 # Plot three maps showng differences 
 df_ports_2021 = identify_terminal_status(filtered_ports[filtered_ports['Model Year'] <= 2021], 2021)
 df_2021 = process_file(baseline_path_2021)
 pipelines_2021 = df_2021[(df_2021['FromType'] == '-') & (df_2021['ToType'] == '-')]
-# Mark all pipelines as included
 pipeline_status_2021 = {edge: 'included' for edge in pipelines_2021['Edge']}
 
 df_ports_2024 = identify_terminal_status(filtered_ports[filtered_ports['Model Year'] <= 2024], 2024)
@@ -92,19 +95,17 @@ pipeline_status_2024 = scenario_pipeline_exclusions(input_excluded_pipelines, pi
 df_ports_2035 = identify_terminal_status(filtered_ports, 2035)
 df_2035 = process_file(baseline_path_2035)
 pipelines_2035 = df_2035[(df_2035['FromType'] == '-') & (df_2035['ToType'] == '-')]
-# Mark all pipelines as included
 pipeline_status_2035 = {edge: 'included' for edge in pipelines_2035['Edge']}
-
 
 #plot_map(df_ports_2021, pipelines_2021, pipeline_status_2021, 2021, base_path, False)
 #plot_map(df_ports_2024, pipelines_2024, pipeline_status_2024, 2024, base_path, False)
 #plot_map(df_ports_2035, pipelines_2035, pipeline_status_2035, 2035, base_path, False)
 
+
+
 # -----------------------------------------------------------------------
 df_no_invest = process_file(output_file_no_invest)
-
 df_with_imports = df_no_invest[(df_no_invest['FromType'] == 'LNG_import')]
-# df_with_imports.drop(df_with_imports[df_with_imports['Flow'] == 0].index, inplace=True)
 
 # Filter out rows to save
 utilization_df = df_with_imports[["From", "Flow", "Capacity_tot", "Share"]]
@@ -138,13 +139,13 @@ summary_row_EU = pd.DataFrame({
 
 # Append the summary to the DataFrame
 utilization_summary = pd.concat([utilization_df, summary_row, summary_row_EU], ignore_index=True)
-# bar_fig = plot_bar_chart(utilization_summary)
+bar_fig = plot_bar_chart(utilization_summary)
 
 # Consider the pipelines excluded in each scenario
 df_final = process_pipelines(df_no_invest, file_name_no_invest, input_excluded_pipelines)
 
 # Plot
-fig = plot_flow_map(df_final, filtered_ports, df_with_imports, title_no_invest)
+fig = plot_flow_map(df_final, filtered_ports, df_with_imports, filtered_LNG_IMPORT_COORDS)
 
 #Save the figure
 if save_flow_no_invest: 
@@ -155,11 +156,7 @@ if save_flow_no_invest:
 # ---------------------------------------------------------------------
 # Do all the same for the investment case 
 df_invest = process_file(output_file_invest)
-
-# Why do we deen to filter in this way? With this procdure we drop information on non European LNG Terminals?
-# @Mathilde
 df_with_imports_invest = df_invest[(df_invest['FromType'] == 'LNG_import')]
-# df_with_imports_invest.drop(df_with_imports_invest[df_with_imports_invest['Flow'] == 0].index, inplace=True)
 
 # Filter out rows to save
 utilization_invest_df = df_with_imports_invest[["From", "Flow", "Capacity_tot", "Share"]]
@@ -193,13 +190,13 @@ summary_row_EU_invest = pd.DataFrame({
 
 # Append the summary to the DataFrame
 utilization_summary_invest = pd.concat([utilization_invest_df, summary_row_invest, summary_row_EU_invest], ignore_index=True)
-# bar_fig = plot_bar_chart(utilization_summary_invest)
+bar_fig = plot_bar_chart(utilization_summary_invest)
 
 # Consider the pipelines excluded in each scenario
 df_clean = process_pipelines(df_invest, file_name_invest, input_excluded_pipelines)
 
 # Plot
-fig = plot_flow_map(df_clean, filtered_ports, df_with_imports, title_invest)
+fig = plot_flow_map(df_clean, filtered_ports, df_with_imports, filtered_LNG_IMPORT_COORDS)
 
 if save_flow_invest: 
     fig.write_image(output_path_invest + ".png", width=1135, height=800, scale=2)
@@ -231,9 +228,8 @@ colorbar_zero_2021 = 0.32
 colorbar_zero_2024 = 0.65
 colorbar_zero_2035 = 0.77
 
-
-plot_cost_map(input_file_cost, scenario, base_path, json_file_path, True)
-plot_cost_difference(file_cost_difference_2021, full_name, scenario, base_path, colorbar_zero_2021, json_file_path, True)
+# plot_cost_map(input_file_cost, scenario, base_path, json_file_path, True)
+# plot_cost_difference(file_cost_difference_2021, full_name, scenario, base_path, colorbar_zero_2021, json_file_path, True)
 
 # ---------------------------------------------------------------------
 data_path_emissions = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "02_prepared_results")

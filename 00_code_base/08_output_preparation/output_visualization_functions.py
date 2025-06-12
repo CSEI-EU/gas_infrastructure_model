@@ -221,10 +221,33 @@ LNG_IMPORT_COORDS = {
     'PT': (40.0, -8.0),
     'ES': (40, -1.8),
     'UK': (52.6, -2.5),
-    'NO': (61.0, 8.0),
+    # 'NO': (61.0, 8.0),
     'EE': (58.6, 26.0),  
     'TR': (38.0, 32.0)
 }
+
+
+# Only keep the countries that appear for the specific year(s)
+def get_countries_with_terminals(filtered_ports):
+    return set(filtered_ports['Country'].unique())
+
+manual_country_mapping = {
+    'United Kingdom': 'UK',
+    'Greece': 'EL',
+    'Turkey': 'TR',
+}
+
+def country_name_to_code(name):
+    # First replace manually the ones not working
+    if name in manual_country_mapping:
+        return manual_country_mapping[name]
+
+    try:
+        iso2 = pycountry.countries.lookup(name).alpha_2
+        return iso2
+    except LookupError:
+        return None
+
 
 def get_corresponding_scenario(filename):
     if "outputs_IAEE_2025_run_2024_plus_NO_reduced" in filename:
@@ -306,7 +329,7 @@ def flow_color(share):
 
 
 # Final plot of the map
-def plot_flow_map(df, ports, imports, title):
+def plot_flow_map(df, ports, imports, lng_import_coords):
     fig = go.Figure()
  
     # First plot the pipeline flows
@@ -355,7 +378,7 @@ def plot_flow_map(df, ports, imports, title):
     ))
  
     # Add LNG import points
-    for country, (lat, lon) in LNG_IMPORT_COORDS.items():
+    for country, (lat, lon) in lng_import_coords.items():
         share_import = imports[imports['From']== country]['Share'].values
         capacity_import = imports[imports['From']== country]['Capacity_tot'].values
  
