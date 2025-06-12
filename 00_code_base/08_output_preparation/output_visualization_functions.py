@@ -5,6 +5,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 import pycountry
 
+import json 
 
 # Separate the Edge column to have which countries is source and which is destination 
 def parse_edges(df):
@@ -526,24 +527,37 @@ def convert_to_alpha3(iso2):
         return None
 
 
-def plot_cost_map(input_path, scenario, base_path, save):
+def plot_cost_map(input_path, scenario, base_path, geojson_path, save):
     output_file = os.path.join(base_path, "02_plots", "Costs_Results", f"cost_heatmap_{scenario}.png")
+
+    # Load the GeoJSON
+    with open(geojson_path, 'r', encoding='utf-8') as f:
+        custom_geojson = json.load(f)
+
+    # Load Excel data
     df = pd.read_excel(input_path)
     df.columns = df.columns.str.strip()
 
     df = df[df["Node"].apply(european_countries)]
     df["Node_ISO3"] = df["Node"].apply(convert_to_alpha3)
 
-    color_range = [11000, 35000] # color range from 2021
+    # Split Ukraine vs rest
+    df_ukraine = df[df["Node_ISO3"] == "UKR"]
+    df_rest = df[df["Node_ISO3"] != "UKR"]
+
+    color_range = [11000, 35000]  # Fixed color range
     # color_range = [df["Total Cost"].min(), df["Total Cost"].max()]
 
-    fig = go.Figure(data=go.Choropleth(
-        locations=df["Node_ISO3"],
-        z=df["Total Cost"],
+    fig = go.Figure()
+
+    # Rest of Europe
+    fig.add_trace(go.Choropleth(
+        locations=df_rest["Node_ISO3"],
+        z=df_rest["Total Cost"],
         colorscale="Viridis",
         zmin=color_range[0],
         zmax=color_range[1],
-        marker_line_color='rgb(180, 200, 230)',  # country borders
+        marker_line_color='rgb(180, 200, 230)',
         marker_line_width=0.5,
         colorbar=dict(
             title="Total Cost (€)",
@@ -552,13 +566,27 @@ def plot_cost_map(input_path, scenario, base_path, save):
             len=0.6,
             y=0.5
         ),
-        geo='geo' 
+        name="Rest of Europe"
+    ))
+
+    # Ukraine from custom GeoJSON
+    fig.add_trace(go.Choropleth(
+        geojson=custom_geojson,
+        featureidkey="properties.GID_0",
+        locations=df_ukraine["Node_ISO3"],
+        z=df_ukraine["Total Cost"],
+        colorscale="Viridis",
+        zmin=color_range[0],
+        zmax=color_range[1],
+        marker_line_color='rgb(180, 200, 230)',
+        marker_line_width=0.5,
+        showscale=False,
+        name="Ukraine"
     ))
 
     fig.update_layout(
-        # title not shown
         geo=dict(
-            scope='world',
+            scope='europe',
             projection_type='natural earth',
             showland=True,
             landcolor='rgb(220, 230, 250)',
@@ -579,18 +607,25 @@ def plot_cost_map(input_path, scenario, base_path, save):
         fig.write_image(output_file, width=1135, height=800, scale=2)
     else:
         fig.show()
+     
 
 
+def plot_cost_difference(input_difference, full_scenario_name, scenario, base_path, middle_colorbar, geojson_path, save):
 
-
-def plot_cost_difference(input_difference, full_scenario_name, scenario, base_path, middle_colorbar, save):
     output_file = os.path.join(base_path, "02_plots", "Costs_Results", f"cost_difference_heatmap_{scenario}.png")
     
+    with open(geojson_path, 'r', encoding='utf-8') as f:
+        custom_geojson = json.load(f) 
+
+
     df = pd.read_excel(input_difference, sheet_name="Summary_Total_Cost")
     df.columns = df.columns.str.strip()
 
     df = df[df["Node"].apply(european_countries)]
     df["Node_ISO3"] = df["Node"].apply(convert_to_alpha3)
+
+    df_ukraine = df[df["Node_ISO3"] == "UKR"]
+    df_rest = df[df["Node_ISO3"] != "UKR"]
 
     z = df[full_scenario_name]
     # color_range = [z.min(), z.max()]
@@ -603,13 +638,16 @@ def plot_cost_difference(input_difference, full_scenario_name, scenario, base_pa
     [1.0, 'rgb(255, 0, 0)'],      # Red 
     ]
 
-    fig = go.Figure(data=go.Choropleth(
-        locations=df["Node_ISO3"],
-        z=z,
+    fig = go.Figure()
+
+    # Trace for all other countries (Plotly built-in)
+    fig.add_trace(go.Choropleth(
+        locations=df_rest["Node_ISO3"],
+        z=df_rest[full_scenario_name],
         colorscale=colorscale,
         zmin=color_range[0],
         zmax=color_range[1],
-        marker_line_color='rgb(180, 200, 230)',  # country borders
+        marker_line_color='rgb(180, 200, 230)',
         marker_line_width=0.5,
         colorbar=dict(
             title="Cost difference (€)",
@@ -618,13 +656,27 @@ def plot_cost_difference(input_difference, full_scenario_name, scenario, base_pa
             len=0.6,
             y=0.5
         ),
-        geo='geo' 
+    name="Rest of Europe"
+    ))
+
+    # Trace for Ukraine with custom GeoJSON
+    fig.add_trace(go.Choropleth(
+        geojson=custom_geojson,
+        featureidkey="properties.GID_0",
+        locations=df_ukraine["Node_ISO3"],
+        z=df_ukraine[full_scenario_name],
+        colorscale=colorscale,
+        zmin=color_range[0],
+        zmax=color_range[1],
+        marker_line_color='rgb(180, 200, 230)',
+        marker_line_width=0.25,
+        showscale=False,  # Only one colorbar is needed (for the first trace)
+        name="Ukraine"
     ))
 
     fig.update_layout(
-        # title not shown
         geo=dict(
-            scope='world',
+            scope='europe',  # or 'world'
             projection_type='natural earth',
             showland=True,
             landcolor='rgb(220, 230, 250)',
@@ -640,6 +692,54 @@ def plot_cost_difference(input_difference, full_scenario_name, scenario, base_pa
         width=900,
         height=650
     )
+
+
+    
+
+    '''fig = go.Figure(data=go.Choropleth(
+
+        locations=df["Node_ISO3"],
+        z=z,
+        geojson=custom_geojson,  
+        featureidkey='properties.GID_0',
+        colorscale=colorscale,
+        zmin=color_range[0],
+        zmax=color_range[1],
+        marker_line_color='rgb(180, 200, 230)',  # country borders
+        marker_line_width=0.5,
+        colorbar=dict(
+            title="Cost difference (€)",
+            titlefont=dict(size=14),
+            tickfont=dict(size=12),
+            len=0.6,
+            y=0.5
+        ),
+        # geo='geo',
+    ))
+
+
+    fig.update_layout(
+        # title not shown
+        geo=dict(
+            fitbounds="locations",
+            visible=True,
+
+            #scope='world',
+            #projection_type='natural earth',
+            showland=True,
+            landcolor='rgb(220, 230, 250)',
+            showcountries=True,
+            countrycolor='rgb(180, 200, 230)',
+            showcoastlines=True,
+            coastlinecolor='rgb(160, 180, 220)',
+            center=dict(lat=50, lon=20),
+            lataxis=dict(range=[30, 65]),
+            lonaxis=dict(range=[-20, 40]),
+        ),
+        margin={"r": 0, "t": 0, "l": 0, "b": 0},
+        width=900,
+        height=650
+    )'''
 
     if save:
         fig.write_image(output_file, width=1135, height=800, scale=2)

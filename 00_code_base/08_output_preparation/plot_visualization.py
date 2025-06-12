@@ -191,8 +191,6 @@ summary_row_EU_invest = pd.DataFrame({
     "Share": [total_share_EU_invest]
 })
 
-
-
 # Append the summary to the DataFrame
 utilization_summary_invest = pd.concat([utilization_invest_df, summary_row_invest, summary_row_EU_invest], ignore_index=True)
 # bar_fig = plot_bar_chart(utilization_summary_invest)
@@ -210,10 +208,20 @@ if save_flow_invest:
 
 
 # ---------------------------------------------------------------------
+import requests
+
+url = "https://geodata.ucdavis.edu/gadm/gadm4.1/json/gadm41_UKR_0.json"
+json_file_path = os.path.join(base_path, "00_code_base", "08_output_preparation", "gadm41_UKR_0.json")
+response = requests.get(url)
+with open(json_file_path, "wb") as f:
+    f.write(response.content)
+
+print("JSON File downloaded successfully")
+
 data_path = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "02_prepared_results")
-scenario = "2024_inv"
-full_name = "costs_shares_IAEE_2025_run_2024_inv"
-input_file_cost = os.path.join(data_path, "costs_shares_IAEE_2025_run_2024_inv.xlsx")
+scenario = "2024_plus_NO_reduced"
+full_name = "costs_shares_IAEE_2025_run_2024_plus_NO_reduced"
+input_file_cost = os.path.join(data_path, "costs_shares_IAEE_2025_run_2024_plus_NO_reduced.xlsx")
 
 file_cost_difference_2021 = os.path.join(data_path, "cost_shares_differences_to_2021.xlsx")
 file_cost_difference_2024 = os.path.join(data_path, "cost_shares_differences_to_2024.xlsx")
@@ -223,8 +231,9 @@ colorbar_zero_2021 = 0.32
 colorbar_zero_2024 = 0.65
 colorbar_zero_2025 = 0.7
 
-plot_cost_difference(file_cost_difference_2024, full_name, scenario, base_path, colorbar_zero_2024, False)
+plot_cost_difference(file_cost_difference_2024, full_name, scenario, base_path, colorbar_zero_2024, json_file_path, True)
 
+# ---------------------------------------------------------------------
 data_path_emissions = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "02_prepared_results")
 input_file_emissions= os.path.join(data_path_emissions, "emission_differences.xlsx")
 
