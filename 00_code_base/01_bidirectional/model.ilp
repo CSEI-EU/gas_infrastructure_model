@@ -1,0 +1,47 @@
+\ Model Grid_Transformation_copy
+\ LP format - for model browsing. Use MPS format to capture full model detail.
+\ Signature: 0x5c26788a79cd12db
+Minimize
+ 
+Subject To
+ cap[Methane,node_0003,node_0006]: flow[Methane,node_0003,node_0006]
+   - investment[Methane,node_0003,node_0006]
+   - converted_capacity[Methane,node_0003,node_0006] <= 0
+ cap[Methane,node_0003,node_0006]: investment[Methane,node_0003,node_0006]
+   + converted_capacity[Methane,node_0003,node_0006] <= 6.329656656031141
+ node[Methane,node_0003]: - flow[Methane,node_0003,node_0004]
+   - flow[Methane,node_0003,node_0006]
+   - flow[Methane,node_0003,node_0008_1]
+   - flow[Methane,node_0003,node_0008_2]
+   + flow[Methane,node_0004,node_0003] + flow[Methane,node_0006,node_0003]
+   + flow[Methane,node_0008_1,node_0003]
+   + flow[Methane,node_0008_2,node_0003] = -20
+ node[Methane,node_0004]: flow[Methane,node_0003,node_0004]
+   - flow[Methane,node_0004,node_0003] = 5
+ node[Methane,node_0008]: flow[Methane,node_0008_1,node_0008]
+   + flow[Methane,node_0008_2,node_0008]
+   - flow[Methane,node_0008,node_0008_1]
+   - flow[Methane,node_0008,node_0008_2] = 5
+ node[Methane,node_0008_1]: flow[Methane,node_0003,node_0008_1]
+   - flow[Methane,node_0008_1,node_0008]
+   - flow[Methane,node_0008_1,node_0003]
+   + flow[Methane,node_0008,node_0008_1] = 0
+ node[Methane,node_0008_2]: flow[Methane,node_0003,node_0008_2]
+   - flow[Methane,node_0008_2,node_0008]
+   - flow[Methane,node_0008_2,node_0003]
+   + flow[Methane,node_0008,node_0008_2] = 0
+Bounds
+ flow[Methane,node_0003,node_0004] free
+ flow[Methane,node_0003,node_0006] free
+ flow[Methane,node_0003,node_0008_1] free
+ flow[Methane,node_0003,node_0008_2] free
+ flow[Methane,node_0008_1,node_0008] free
+ flow[Methane,node_0008_2,node_0008] free
+ flow[Methane,node_0004,node_0003] free
+ flow[Methane,node_0008_1,node_0003] free
+ flow[Methane,node_0008_2,node_0003] free
+ flow[Methane,node_0008,node_0008_1] free
+ flow[Methane,node_0008,node_0008_2] free
+ investment[Methane,node_0003,node_0006] free
+ converted_capacity[Methane,node_0003,node_0006] free
+End
