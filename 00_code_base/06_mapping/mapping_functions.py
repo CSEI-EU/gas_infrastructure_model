@@ -8,6 +8,8 @@ from shapely.geometry import Point
 from tqdm import tqdm
 from datetime import date
 import matplotlib.pyplot as plt
+from scipy.spatial import Voronoi
+from shapely.geometry import Polygon, MultiPoint
 
 
 # Function to read data  
@@ -110,7 +112,20 @@ def latlon_case(df):
     df = df.dropna(subset=['Latitude', 'Longitude'])
     geometry = gpd.points_from_xy(df['Longitude'], df['Latitude'])
     gdf = gpd.GeoDataFrame(df, geometry=geometry, crs='EPSG:4326')
-    return gdf[['Latitude', 'Longitude', 'Peak Load [MWh/h]', 'geometry']]   
+    return gdf[['Latitude', 'Longitude', 'Peak Load [MWh/h]', 'geometry']]
+
+
+# Case of NUTS3 region given: use Voronoi polygons
+def voronoi_polygons(vor):
+    polygons = []
+    for region in vor.regions:
+        if not region:  # Skip empty regions
+            continue
+        if -1 in region:  # Skip regions with infinite vertices
+            continue
+        polygon = Polygon([vor.vertices[i] for i in region])
+        polygons.append(polygon)
+    return polygons
 
 
 # Map each point to the closest node (in distance) and agregate demand 
