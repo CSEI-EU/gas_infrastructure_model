@@ -104,6 +104,7 @@ def clean_plz(series):
               .str.zfill(5)  
     )
 
+
 # In the case of sheets with direct access to latitude and longitude 
 def latlon_case(df):
     for col in ['Latitude', 'Longitude', 'Peak Load [MWh/h]']:
@@ -115,42 +116,19 @@ def latlon_case(df):
     return gdf[['Latitude', 'Longitude', 'Peak Load [MWh/h]', 'geometry']]
 
 
-# Case of NUTS3 region given: use Voronoi polygons
-def voronoi_polygons(vor):
-    polygons = []
-    for region in vor.regions:
-        if not region:  # Skip empty regions
-            continue
-        if -1 in region:  # Skip regions with infinite vertices
+# Function to generate Voronoi polygons 
+def generate_voronoi_polygons(points):
+    vor = Voronoi(points.apply(lambda p: [p.x, p.y]).tolist())
+
+    # Build the polygons
+    voronoi_polygons = []
+    for i, region_index in enumerate(vor.point_region):
+        region = vor.regions[region_index]
+        if not region or -1 in region:
             continue
         polygon = Polygon([vor.vertices[i] for i in region])
-        polygons.append(polygon)
-    return polygons
+        voronoi_polygons.append(polygon)
 
-
-# Map each point to the closest node (in distance) and agregate demand 
-def read_sector(full_path, sheet, plz_gdf):
-    df = pd.read_excel(full_path, sheet_name=sheet)
-
-    if {'Latitude', 'Longitude', 'Peak Load [MWh/h]'}.issubset(df.columns):
-        return latlon_case(df)
-
-    elif 'Standort-PLZ' in df.columns:
-        df['Standort-PLZ'] = clean_plz(df['Standort-PLZ'])
-        df = df.merge(plz_gdf[['Postleitzahl / Post code', 'geometry']], left_on='Standort-PLZ', right_on='Postleitzahl / Post code', how='left')
-
-        missing = df[df['geometry'].isna()]
-        if not missing.empty:
-            print("WARNING: These PLZs had no geometry match:")
-            print(missing['Standort-PLZ'].unique())
-
-        df = df.dropna(subset=['geometry'])
-
-        # Create the geodataframe with correct geometry 
-        gdf = gpd.GeoDataFrame(df, geometry='geometry', crs='EPSG:4326')
-        gdf['geometry'] = gdf['geometry'].apply(lambda geom: geom.centroid if geom.geom_type != 'Point' else geom)
-        return gdf
-
-    else:
-        print(f"Sheet '{sheet}' has no recognizable location format.")
-        return gpd.GeoDataFrame()
+    # Create the GeoDataframe 
+    voronoi_df = gpd.GeoDataFrame(geometry=voronoi_polygons, crs="EPSG:4326")
+    return voronoi_df
