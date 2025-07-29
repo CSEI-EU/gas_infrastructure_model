@@ -115,20 +115,3 @@ def latlon_case(df):
     gdf = gpd.GeoDataFrame(df, geometry=geometry, crs='EPSG:4326')
     return gdf[['Latitude', 'Longitude', 'Peak Load [MWh/h]', 'geometry']]
 
-
-# Function to generate Voronoi polygons 
-def generate_voronoi_polygons(points):
-    vor = Voronoi(points.apply(lambda p: [p.x, p.y]).tolist())
-
-    # Build the polygons
-    voronoi_polygons = []
-    for i, region_index in enumerate(vor.point_region):
-        region = vor.regions[region_index]
-        if not region or -1 in region:
-            continue
-        polygon = Polygon([vor.vertices[i] for i in region])
-        voronoi_polygons.append(polygon)
-
-    # Create the GeoDataframe 
-    voronoi_df = gpd.GeoDataFrame(geometry=voronoi_polygons, crs="EPSG:4326")
-    return voronoi_df

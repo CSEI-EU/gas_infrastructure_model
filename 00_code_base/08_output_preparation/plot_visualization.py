@@ -95,9 +95,9 @@ df_2035 = process_file(baseline_path_2035)
 pipelines_2035 = df_2035[(df_2035['FromType'] == '-') & (df_2035['ToType'] == '-')]
 pipeline_status_2035 = {edge: 'included' for edge in pipelines_2035['Edge']}
 
-#plot_map(df_ports_2021, pipelines_2021, pipeline_status_2021, 2021, base_path, False)
-#plot_map(df_ports_2024, pipelines_2024, pipeline_status_2024, 2024, base_path, False)
-#plot_map(df_ports_2035, pipelines_2035, pipeline_status_2035, 2035, base_path, False)
+plot_map(df_ports_2021, pipelines_2021, pipeline_status_2021, 2021, base_path, False)
+plot_map(df_ports_2024, pipelines_2024, pipeline_status_2024, 2024, base_path, False)
+plot_map(df_ports_2035, pipelines_2035, pipeline_status_2035, 2035, base_path, False)
 
 
 
