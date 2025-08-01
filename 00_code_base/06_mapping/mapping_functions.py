@@ -11,6 +11,9 @@ import matplotlib.pyplot as plt
 from scipy.spatial import Voronoi
 from shapely.geometry import Polygon, MultiPoint
 
+# To fasten the find closest location function 
+import numpy as np
+from sklearn.neighbors import BallTree
 
 # Function to read data  
 def read_data(file_name, sheet_name):
@@ -24,14 +27,26 @@ def tuple_to_wkt_point(s):
     x_str, y_str = s.strip().replace("(", "").replace(")", "").split(",")
     return f"POINT({x_str} {y_str})"
 
-
 # Function to map demand nd supply to closest nodes 
-def AggregatedDemand(df1, df2):
+'''def AggregatedDemand(df1, df2):
+    # Ensure Demand column is initialized with zeros 
+    if 'Demand' not in df1.columns:
+        df1['Demand'] = 0.0
+    else:
+        df1['Demand'] = df1['Demand'].fillna(0.0)
+
     for index, row1 in tqdm(df1.iterrows(), total=df1.shape[0]):
         for _, row2 in df2.iterrows():
             if row1['ID'] == row2['Closest_node']:
-                df1.loc[index, 'Demand'] += row2['Peak Load [MWh/h]']
-    return df1
+                df1.at[index, 'Demand'] += row2['Peak Load [MWh/h]']
+    return df1'''
+
+def AggregatedDemand(nodes_gdf, demand_gdf):
+    demand_sum = demand_gdf.groupby('Closest_node')['Peak Load [MWh/h]'].sum().reset_index()
+    demand_sum.columns = ['ID', 'Demand']
+    nodes_gdf = nodes_gdf.merge(demand_sum, on='ID', how='left')
+    nodes_gdf['Demand'] = nodes_gdf['Demand'].fillna(0.0)
+    return nodes_gdf
 
 def AggregatedSupply(df1, df2):
     for index, row1 in tqdm(df1.iterrows(), total=df1.shape[0]):
@@ -49,6 +64,54 @@ def AddStorage(df1, df2, aggregated):
 
     return aggregated
 
+def find_closest_location(demand_gdf, nodes_gdf):
+    # Convert lat/lon to radians
+    demand_coords = np.radians(demand_gdf[['Latitude', 'Longitude']].values)
+    node_coords = np.radians(nodes_gdf[['Latitude', 'Longitude']].values)
+
+    # Use BallTree on nodes 
+    tree = BallTree(node_coords, metric='haversine')
+
+    # Faster query of closest node for each demand point
+    dist, ind = tree.query(demand_coords, k=1)
+    dist_km = dist[:, 0] * 6371  # Reconvert from radians to kilometers
+    node_ids = nodes_gdf.iloc[ind[:, 0]]['ID'].values
+    return node_ids, dist_km
+
+
+# Clean the data and plz file 
+def clean_column(df, column_name):
+    df[column_name] = (
+        df[column_name].astype(str)
+        .str.replace(',', '.', regex=False)
+        .str.replace(' ', '', regex=False)
+    )
+    df[column_name] = pd.to_numeric(df[column_name], errors='coerce')
+    return df
+
+def clean_plz(series):
+    return (
+        series.astype(str)
+              .str.replace('\u00A0', '', regex=False)  # need to remove breaks or space and have the normal plz format
+              .str.replace(' ', '', regex=False)     
+              .str.strip()
+              .str.zfill(5)  
+    )
+
+# In the case of sheets with direct access to latitude and longitude 
+def latlon_case(df):
+    for col in ['Latitude', 'Longitude', 'Peak Load [MWh/h]']:
+        df = clean_column(df, col)
+
+    df = df.dropna(subset=['Latitude', 'Longitude'])
+    geometry = gpd.points_from_xy(df['Longitude'], df['Latitude'])
+    gdf = gpd.GeoDataFrame(df, geometry=geometry, crs='EPSG:4326')
+    return gdf[['Latitude', 'Longitude', 'Peak Load [MWh/h]', 'geometry']]
+
+
+
+'''
+# Old used functions
 def find_closest_location(df1, df2):
     closest_node = []
     closest_distance = []
@@ -85,33 +148,29 @@ def get_NUT3_centroid(df1, df2):
     merged_gdf['Latitude']=merged_gdf.geometry.y
     return(merged_gdf)
 
-# Clean the data and plz file 
-def clean_column(df, column_name):
-    df[column_name] = (
-        df[column_name].astype(str)
-        .str.replace(',', '.', regex=False)
-        .str.replace(' ', '', regex=False)
-    )
-    df[column_name] = pd.to_numeric(df[column_name], errors='coerce')
-    return df
+# Function to generate Voronoi polygons 
+def generate_voronoi_from_nodes(nodes_gdf, bounding_shape):
+    points = np.array([[geom.x, geom.y] for geom in nodes_gdf.geometry])
+    vor = Voronoi(points)
 
-def clean_plz(series):
-    return (
-        series.astype(str)
-              .str.replace('\u00A0', '', regex=False)  # need to remove breaks or space and have the normal plz format
-              .str.replace(' ', '', regex=False)     
-              .str.strip()
-              .str.zfill(5)  
-    )
+    # Create Voronoi polygons
+    polygons = []
+    for i, region_index in enumerate(vor.point_region):
+        region = vor.regions[region_index]
+        if -1 in region or len(region) == 0:
+            polygons.append(None)
+        else:
+            polygon = Polygon([vor.vertices[i] for i in region])
+            polygons.append(polygon)
 
+    # Build the Voronoi GeoDataFrame
+    vor_gdf = nodes_gdf.copy()
+    vor_gdf['geometry'] = polygons
+    vor_gdf = vor_gdf.dropna(subset=['geometry'])
 
-# In the case of sheets with direct access to latitude and longitude 
-def latlon_case(df):
-    for col in ['Latitude', 'Longitude', 'Peak Load [MWh/h]']:
-        df = clean_column(df, col)
+    # Clip to bounding shape (Germany NUTS3 boundary)
+    vor_gdf = gpd.clip(vor_gdf, bounding_shape)
 
-    df = df.dropna(subset=['Latitude', 'Longitude'])
-    geometry = gpd.points_from_xy(df['Longitude'], df['Latitude'])
-    gdf = gpd.GeoDataFrame(df, geometry=geometry, crs='EPSG:4326')
-    return gdf[['Latitude', 'Longitude', 'Peak Load [MWh/h]', 'geometry']]
+    return vor_gdf
 
+'''
