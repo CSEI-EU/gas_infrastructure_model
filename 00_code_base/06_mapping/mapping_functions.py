@@ -28,7 +28,7 @@ def tuple_to_wkt_point(s):
     return f"POINT({x_str} {y_str})"
 
 # Function to map demand nd supply to closest nodes 
-'''def AggregatedDemand(df1, df2):
+def AggregatedDemand(df1, df2):
     # Ensure Demand column is initialized with zeros 
     if 'Demand' not in df1.columns:
         df1['Demand'] = 0.0
@@ -39,14 +39,8 @@ def tuple_to_wkt_point(s):
         for _, row2 in df2.iterrows():
             if row1['ID'] == row2['Closest_node']:
                 df1.at[index, 'Demand'] += row2['Peak Load [MWh/h]']
-    return df1'''
+    return df1
 
-def AggregatedDemand(nodes_gdf, demand_gdf):
-    demand_sum = demand_gdf.groupby('Closest_node')['Peak Load [MWh/h]'].sum().reset_index()
-    demand_sum.columns = ['ID', 'Demand']
-    nodes_gdf = nodes_gdf.merge(demand_sum, on='ID', how='left')
-    nodes_gdf['Demand'] = nodes_gdf['Demand'].fillna(0.0)
-    return nodes_gdf
 
 def AggregatedSupply(df1, df2):
     for index, row1 in tqdm(df1.iterrows(), total=df1.shape[0]):
@@ -76,6 +70,7 @@ def find_closest_location(demand_gdf, nodes_gdf):
     dist, ind = tree.query(demand_coords, k=1)
     dist_km = dist[:, 0] * 6371  # Reconvert from radians to kilometers
     node_ids = nodes_gdf.iloc[ind[:, 0]]['ID'].values
+    print("closest location function works")
     return node_ids, dist_km
 
 
