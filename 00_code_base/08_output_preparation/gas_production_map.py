@@ -8,7 +8,7 @@ import requests
 
 # Change parameters for output 
 save_output = False
-scenarios = ["2021", "2024", "2035 High Demand", "2035 Low Demand"] 
+scenarios = ["2021", "2024", "2035 High Demand"] #, "2035 Low Demand"] 
 
 # Input data
 input_file_path = os.path.join('01_data', '01_input_data', '02_processed', '01_paper_IAEE', '01_data_sheets_input')
@@ -121,7 +121,6 @@ caspian_countries = region_to_countries["Caspian Region"]
 world_plot = world[world['ISO_A3'].isin(caspian_countries)]
 world_plot.plot(ax=ax, color=pastel_colors["Caspian Region"], edgecolor="grey", linewidth=0.5, zorder=1)
 
-# Other regions, without the Caspian
 for region_name in specific_regions:
     if region_name == "Caspian Region":
         continue
@@ -133,8 +132,18 @@ for region_name in specific_regions:
             world_plot.plot(ax=ax, color=color, edgecolor="grey", linewidth=0.5, zorder=1)
 
 
+# Store all values to find global maxium 
+all_vals = []
+for region_name in specific_regions:
+    if region_name in data_gas_prod['Country'].values:
+        vals = data_gas_prod.loc[data_gas_prod['Country'] == region_name, scenarios].values.flatten()
+        all_vals.extend(np.sqrt(vals))
 
-# Plot bars over regions 
+all_vals = np.array(all_vals)
+global_max = all_vals.max()
+scale_factor = 25.0 
+
+
 for region_name in specific_regions:
     if region_name not in region_to_countries:
         continue
@@ -145,38 +154,24 @@ for region_name in specific_regions:
         continue
 
     x, y = region_geom.centroid.x, region_geom.centroid.y
+
     if region_name in data_gas_prod['Country'].values:
         vals = data_gas_prod.loc[data_gas_prod['Country'] == region_name, scenarios].values.flatten()
     else:
         vals = np.zeros(len(scenarios))
 
 
-    # Log scale without target height
-    vals_scaled = np.log1p(vals)
-    
-    '''
-    # Log scale for bars 
-    vals_log = np.log1p(vals)
-    max_val = vals_log.max()
-    target_height = 10.0
-    scale_factor = target_height / max_val if max_val > 0 else 1
-    vals_scaled = vals_log * scale_factor
+    vals_sqrt = np.sqrt(vals)
+    vals_scaled = vals_sqrt / global_max * scale_factor
 
-
-    # Target height and scaling 
-    max_val = vals.max()
-    target_height = 10.0
-    scale_factor = target_height / max_val if max_val > 0 else 1
-    vals_scaled = vals * scale_factor'''
-
-    width = 1.0
+    width = 1.2
     bar_positions = np.arange(len(vals)) * width
     ax.bar(
         x + bar_positions - width*1.5,
         vals_scaled,
-        width=0.9,
+        width=0.97,
         bottom=y,
-        color=['#1f77b4','#ff7f0e','#d62728','#2ca02c'],
+        color=['#1f77b4','#ff7f0e','#d62728'], #,'#2ca02c'],
         align='center',
         zorder=5
     )
@@ -185,15 +180,50 @@ for region_name in specific_regions:
 legend_elements = [
     Patch(facecolor='#1f77b4', label='2021'),
     Patch(facecolor='#ff7f0e', label='2024'),
-    Patch(facecolor='#d62728', label='2035 High Demand'),
-    Patch(facecolor='#2ca02c', label='2035 Low Demand'),
+    Patch(facecolor="#d62728", label='2035'),
+    #Patch(facecolor='#2ca02c', label='2035 Low Demand'),
 ]
-ax.legend(handles=legend_elements, loc='lower left')
+ax.legend(handles=legend_elements, loc='lower left', title='Bar heights sqrt-normalized')
 
 ax.set_axis_off()
 ax.set_aspect('equal')
 plt.tight_layout()
 plt.show()
 
+# Save final output
 if save_output: 
     fig.savefig(output_path + "_map_bars.png", dpi=300)
+
+
+# Create a simple bar plot to see and scale bars 
+regions = [r for r in region_to_countries.keys() if r in data_gas_prod['Country'].values]
+plot_data = data_gas_prod.set_index('Country').loc[regions, scenarios]
+
+# Normalize by sqrt
+plot_data_sqrt = np.sqrt(plot_data)
+max_val = plot_data_sqrt.values.max()
+plot_data_scaled = plot_data_sqrt / max_val if max_val > 0 else plot_data_sqrt
+n_regions = len(plot_data)
+n_scenarios = len(scenarios)
+bar_width = 0.2
+x = np.arange(n_regions)
+
+
+# Create figure
+fig, ax = plt.subplots(figsize=(15, 6))
+colors = ['#1f77b4','#ff7f0e','#d62728','#2ca02c']
+for i, scenario in enumerate(scenarios):
+    ax.bar(x + i*bar_width, 
+           plot_data_scaled[scenario], 
+           width=bar_width, 
+           color=colors[i], 
+           label=scenario)
+ax.set_xticks(x + bar_width*(n_scenarios-1)/2)
+ax.set_xticklabels(plot_data_scaled.index, rotation=45, ha='right')
+ax.set_ylabel('Gas production')
+ax.set_title('Gas production by Region (sqrt and normalized)')
+ax.legend()
+
+
+plt.tight_layout()
+plt.show()
