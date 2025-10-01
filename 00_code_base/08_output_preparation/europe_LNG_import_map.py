@@ -6,6 +6,7 @@ import numpy as np
 from matplotlib.patches import Patch
 import requests
 from shapely.geometry import MultiPolygon
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 # Change parameters for output
 save_output = False
@@ -21,6 +22,15 @@ data_gas_prod = pd.read_excel(full_input_path)
 # Convert European-style numbers (comma as decimal) to float
 for col in scenarios:
     data_gas_prod[col] = data_gas_prod[col].astype(str).str.replace(",", ".", regex=False).astype(float)
+
+# Add Sweden and Montenegro manually
+extra_countries = ["Sweden", "Montenegro"]
+for c in extra_countries:
+    if c not in data_gas_prod["Country"].values:
+        data_gas_prod = pd.concat([
+            data_gas_prod,
+            pd.DataFrame([{"Country": c, **{s: 0.0 for s in scenarios}}])
+        ], ignore_index=True)
 
 excel_countries = [c for c in data_gas_prod["Country"].unique() if c != "Total"]
 
@@ -47,7 +57,7 @@ world = pd.concat([world, ukraine_corrected], ignore_index=True)
 
 
 # Clean ISO_A3: replace errors with country codes (error for Norway, France and Kosovo)
-fix_iso = {"France": "FRA", "Norway": "NOR", "Kosovo": "XKX"}
+fix_iso = {"France": "FRA", "Kosovo": "XKX"}
 world["ISO_A3"] = world.apply(lambda row: fix_iso.get(row["NAME"], row["ISO_A3"]), axis=1)
 
 
@@ -76,7 +86,7 @@ world_europe = world[world["NAME"].isin([country_name_map.get(c, c) for c in exc
 
 def country_color(country):
     vals = data_gas_prod.loc[data_gas_prod["Country"]==country, scenarios].values.flatten()
-    return "#d8d8d8" if np.any(vals > 0) else "white"
+    return "#b5b4b4" if np.any(vals > 0) else "#DFDFDF"
 
 world_europe["color"] = world_europe["NAME"].apply(lambda n: country_color(
     {v:k for k,v in country_name_map.items()}.get(n, n)
@@ -104,22 +114,36 @@ ax.set_xlim(-25, 45)
 ax.set_ylim(34, 72)
 
 # Bar plots first 
-# Store all values to find global maximum across all countries and scenarios
-all_vals = []
-for region_name in excel_countries:
-    if region_name in data_gas_prod['Country'].values:
-        vals = data_gas_prod.loc[data_gas_prod['Country'] == region_name, scenarios].values.flatten()
-        all_vals.extend(np.sqrt(vals))
+# Store all values to find global max (raw and sqrt)
+all_vals_raw = []
+all_vals_sqrt = []
 
-all_vals = np.array(all_vals)
-global_max = all_vals.max()
-scale_factor = 25.0 
-records =[]
+for country in excel_countries:
+    if country in data_gas_prod['Country'].values:
+        vals = data_gas_prod.loc[data_gas_prod['Country'] == country, scenarios].values.flatten()
+        all_vals_raw.extend(vals)
+        all_vals_sqrt.extend(np.sqrt(vals))
+
+vals_for_scaling = data_gas_prod.loc[data_gas_prod['Country'] != "Total", scenarios].values.flatten()
+vals_for_scaling = np.array(vals_for_scaling, dtype=float)
+
+global_max_raw = vals_for_scaling.max()
+global_max_sqrt = np.sqrt(global_max_raw)
+scale_factor = 0.3
+records = []
+
+
+# Fix some positions 
+bar_position_fixed = {
+    "Slovakia": (0.6, 0),  
+    "Hungary": (-0.6, 0),
+    "Norway": (-6, -4),     
+}
 
 for country in excel_countries:
     vals = data_gas_prod.loc[data_gas_prod["Country"] == country, scenarios].values.flatten()
     vals_sqrt = np.sqrt(vals)
-    vals_scaled = vals_sqrt / global_max * scale_factor if global_max != 0 else np.zeros_like(vals_sqrt)
+    vals_scaled = np.sqrt(vals) / np.sqrt(global_max_sqrt) * scale_factor
 
     shp_name = country_name_map.get(country, country)
     geom_row = world_europe[world_europe["NAME"] == shp_name]
@@ -131,6 +155,10 @@ for country in excel_countries:
     geom = geom_row["geometry"].values[0]
     centroid = get_centroid(geom)
     x, y = centroid.x, centroid.y
+    if country in bar_position_fixed:
+        x += bar_position_fixed[country][0]
+        y += bar_position_fixed[country][1]
+
 
     for scenario, v, v_sqrt, v_scaled in zip(scenarios, vals, vals_sqrt, vals_scaled):
         records.append({
@@ -142,7 +170,8 @@ for country in excel_countries:
         })
 
     width = 0.3
-    bar_positions = np.arange(len(vals)) * width
+    spacing = 1.2
+    bar_positions = np.arange(len(vals)) * width * spacing
     ax.bar(
         x + bar_positions - width,
         vals_scaled,
@@ -154,36 +183,42 @@ for country in excel_countries:
     )
 
 df_bars = pd.DataFrame(records)
-print(df_bars[df_bars["Region"]== "France"])
-print(df_bars[df_bars["Region"]== "Spain"])
-print(df_bars[df_bars["Region"]== "Ukraine"])
+print(df_bars[df_bars["Region"]== "Norway"])
 
 
 legend_scenarios = [
     Patch(facecolor="#4f81bd", label="2021"),
     Patch(facecolor="#2ca02c", label="2024"),
-    Patch(facecolor="#ca2e2e", label="2035 High Demand"),
-    Patch(facecolor="#732ca0", label="2035 Low Demand"),
+    Patch(facecolor="#ca2e2e", label="2035 Stated Policies"),
+    Patch(facecolor="#732ca0", label="2035 Announced Policies"),
+    Patch(facecolor="#b5b4b4", label="Producing European country"),
+    Patch(facecolor="#DFDFDF", label="No production"),
 ]
 ax.legend(handles=legend_scenarios, loc="lower left", title="Bar heights sqrt-normalized", frameon=True)
 
-# Scale inset
-from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+# Scale the bar height 
 axins = inset_axes(
-    ax, width="2%", height="20%", loc="lower left",
-    bbox_to_anchor=(0.20, 0.02, 1, 1),
-    bbox_transform=ax.transAxes, borderpad=0
+    ax, width="2%", height="25%",
+    loc="lower left",
+    bbox_to_anchor=(0.1, 0.3, 1, 1),  
+    bbox_transform=ax.transAxes,
+    borderpad=0
 )
-axins.bar(0, 25, width=0.6, color="lightgrey", edgecolor="black")
-axins.set_ylim(0, 25)
+
+tick_vals = np.linspace(0, scale_factor, 5)
+tick_labels = [f"{int((val / scale_factor * global_max_sqrt)**2)}" for val in tick_vals]
+
+
+axins.bar(0, scale_factor, width=0.6, color="lightgrey", edgecolor="black")
+axins.set_ylim(0, scale_factor)
 axins.set_xticks([])
-axins.set_yticks([0, 25])
-axins.set_yticklabels(["0", "max"], fontsize=8)
+axins.set_yticks(tick_vals)
+axins.set_yticklabels(tick_labels, fontsize=8)
+axins.set_title("GWh/a", fontsize=9)
 axins.set_frame_on(False)
 
-
 ax.set_axis_off()
-ax.set_aspect("equal")
+ax.set_aspect('equal')
 plt.tight_layout()
 plt.show()
 

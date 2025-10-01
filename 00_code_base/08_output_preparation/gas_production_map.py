@@ -306,7 +306,7 @@ leg = ax.legend(
 ax.add_artist(leg)
 
 
-# Sclae the bar height 
+# Scale the bar height 
 axins = inset_axes(
     ax, width="2%", height="25%",
     loc="lower left",
