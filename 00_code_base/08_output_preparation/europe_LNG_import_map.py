@@ -9,7 +9,7 @@ from shapely.geometry import MultiPolygon
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 # Change parameters for output
-save_output = False
+save_output = True
 scenarios = ["2021", "2024", "2035 High Demand", "2035 Low Demand"]  
 
 # Input data
@@ -19,7 +19,6 @@ full_input_path = os.path.abspath(os.path.join(os.getcwd(), input_file_path + in
 data_gas_prod = pd.read_excel(full_input_path)
 
 # Fix commas in Excel
-# Convert European-style numbers (comma as decimal) to float
 for col in scenarios:
     data_gas_prod[col] = data_gas_prod[col].astype(str).str.replace(",", ".", regex=False).astype(float)
 
@@ -194,20 +193,31 @@ legend_scenarios = [
     Patch(facecolor="#b5b4b4", label="Producing European country"),
     Patch(facecolor="#DFDFDF", label="No production"),
 ]
-ax.legend(handles=legend_scenarios, loc="lower left", title="Bar heights sqrt-normalized", frameon=True)
+ax.legend(handles=legend_scenarios, loc="lower left", title="Bar heights sqrt-normalized for scenarios", frameon=True)
 
 # Scale the bar height 
 axins = inset_axes(
     ax, width="2%", height="25%",
     loc="lower left",
-    bbox_to_anchor=(0.1, 0.3, 1, 1),  
+    bbox_to_anchor=(0.1, 0.25, 1, 1),  
     bbox_transform=ax.transAxes,
     borderpad=0
 )
 
 tick_vals = np.linspace(0, scale_factor, 5)
-tick_labels = [f"{int((val / scale_factor * global_max_sqrt)**2)}" for val in tick_vals]
 
+def human_readable(val):
+    if val >= 1_000_000:
+        return f"{round(val/1_000_000,1)}M"   # 1.2M
+    elif val >= 1_000:
+        return f"{round(val/1_000)}k"         # 500k
+    else:
+        return str(int(val))
+
+tick_labels = [
+    human_readable((val / scale_factor) * global_max_raw)
+    for val in tick_vals
+]
 
 axins.bar(0, scale_factor, width=0.6, color="lightgrey", edgecolor="black")
 axins.set_ylim(0, scale_factor)
@@ -224,4 +234,5 @@ plt.show()
 
 
 if save_output:
-    fig.savefig(output_path + "europe_gas_prod.png", dpi=300)
+    os.makedirs(output_path, exist_ok=True)
+    fig.savefig(os.path.join(output_path, "europe_gas_prod.png"), dpi=300)

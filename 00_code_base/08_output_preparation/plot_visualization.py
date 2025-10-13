@@ -227,7 +227,7 @@ colorbar_zero_2024 = 0.65
 colorbar_zero_2035 = 0.77
 
 # plot_cost_map(input_file_cost, scenario, base_path, json_file_path, True)
-# plot_cost_difference(file_cost_difference_2021, full_name, scenario, base_path, colorbar_zero_2021, json_file_path, True)
+plot_cost_difference(file_cost_difference_2021, full_name, scenario, base_path, colorbar_zero_2021, json_file_path, False)
 
 # ---------------------------------------------------------------------
 data_path_emissions = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "02_prepared_results")

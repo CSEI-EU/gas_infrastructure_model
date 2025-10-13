@@ -4,6 +4,7 @@ import os
 import plotly.graph_objects as go
 import plotly.express as px
 import pycountry
+import numpy as np
 
 import json 
 
@@ -651,12 +652,23 @@ def plot_cost_difference(input_difference, full_scenario_name, scenario, base_pa
     color_range = [z.min(), z.max()]
     #color_range = [-13000, 7000]
 
+    # Percentage for plotting 
+    percent_scale = z / z.abs().max() * 100
+
+    tickvals = list(np.linspace(color_range[0], color_range[1], 5))
+    ticktext = [f"{val / z.abs().max() * 100:.1f}%" for val in tickvals]
+
+    # Define the right percentage colorbar 
+    middle_colorbar_normalized = (-color_range[0]) / (color_range[1] - color_range[0])
+
     # Green to red 
     colorscale = [
     [0.0, 'rgb(0, 128, 0)'],      # Green 
-    [middle_colorbar, 'rgb(255, 255, 255)'],  # White 
+    [middle_colorbar_normalized, 'rgb(255, 255, 255)'],  # White 
     [1.0, 'rgb(255, 0, 0)'],      # Red 
     ]
+
+    print(convert_to_alpha3('TR'))
 
     fig = go.Figure()
 
@@ -674,7 +686,9 @@ def plot_cost_difference(input_difference, full_scenario_name, scenario, base_pa
             titlefont=dict(size=14),
             tickfont=dict(size=12),
             len=0.6,
-            y=0.5
+            y=0.5,
+            tickvals=tickvals,   
+            ticktext=ticktext 
         ),
     name="Rest of Europe"
     ))
