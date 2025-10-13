@@ -8,7 +8,7 @@ import requests
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 # Change parameters for output 
-save_output = True
+save_output = False
 scenarios = ["2021", "2024", "2035 High Demand"] #, "2035 Low Demand"] 
 
 # Input data
@@ -16,6 +16,16 @@ input_file_path = os.path.join('01_data', '01_input_data', '02_processed', '01_p
 input_file = '\\paper_paris_2025_input_production_world.xlsx'
 full_input_path = os.path.abspath(os.path.join(os.getcwd(), input_file_path + input_file))
 data_gas_prod = pd.read_excel(full_input_path)
+
+# LNG port locations 
+LNG_location_path = os.path.join('01_data', '01_input_data', '01_raw', '01_Russian_War_Case')
+LNG_file = '\\LNG_locations.xlsx'
+full_LNG_path = os.path.abspath(os.path.join(LNG_location_path + LNG_file))
+ports_df = pd.read_excel(full_LNG_path, sheet_name="Global")
+
+# Convert locations to float
+ports_df['Latitude'] = ports_df['Latitude'].astype(str).str.replace(',', '.').astype(float)
+ports_df['Longitude'] = ports_df['Longitude'].astype(str).str.replace(',', '.').astype(float)
 
 # Output path
 output_path = os.path.join('02_plots')
@@ -41,10 +51,7 @@ world = pd.concat([world, ukraine_corrected], ignore_index=True)
 
 # Clean ISO_A3: replace errors with country codes (error for Norway, France and Kosovo)
 fix_iso = {"France": "FRA", "Norway": "NOR", "Kosovo": "XKX"}
-world["ISO_A3"] = world.apply(
-    lambda row: fix_iso.get(row["NAME"], row["ISO_A3"]),
-    axis=1
-)
+world["ISO_A3"] = world.apply(lambda row: fix_iso.get(row["NAME"], row["ISO_A3"]),axis=1)
 
 # Remove Antarctica
 world = world[world["CONTINENT"] != "Antarctica"]
@@ -85,10 +92,7 @@ region_to_countries = {
 
 
 asia_exclusions = ["TUR"] + region_to_countries["Middle East"] + region_to_countries["Caspian Region"]
-region_to_countries["Asia"] = [
-    c for c in world[world["CONTINENT"] == "Asia"]["ISO_A3"].tolist()
-    if c not in asia_exclusions
-] + ["PNG"]
+region_to_countries["Asia"] = [c for c in world[world["CONTINENT"] == "Asia"]["ISO_A3"].tolist() if c not in asia_exclusions] + ["PNG"]
 region_to_countries["Oceania"] = ["AUS", "NZL"]
 
 # Build the map
@@ -131,6 +135,7 @@ highlight_countries = {
     "MYS": "#e36c3d", 
     "IND": "#e36c3d", 
     "CHN": "#e36c3d", 
+    "IDN": "#e36c3d", 
     "HKG": "#e36c3d",
     "KOR": "#dd7762", 
     "JPN": "#dd7762",
@@ -178,6 +183,18 @@ for iso_code, color in highlight_countries.items():
     if not geom.empty:
         geom.boundary.plot(ax=ax, color=color, linewidth=1.2, zorder=3)
 
+# Add LNG port locations
+ax.scatter(
+    ports_df['Longitude'],
+    ports_df['Latitude'],
+    color='black',
+    s=10,
+    marker='o',
+    edgecolor='black',
+    zorder=6,
+    label='LNG Ports'
+)
+
 vals_for_scaling = data_gas_prod.loc[data_gas_prod['Country'] != "Total", scenarios].values.flatten()
 vals_for_scaling = np.array(vals_for_scaling, dtype=float)
 
@@ -187,7 +204,7 @@ scale_factor = 25.0
 
 # Fix the position of some bars
 bar_position_fixed = {
-    "North America": (-98.5, 39.8),  # central USA for North America 
+    "North America": (-98.5, 39.8),   
     "Middle East": (41.50, 27.6),  # move bars when Qatar appears 
 }
 
@@ -240,8 +257,12 @@ for r in specific_regions:
         label = "Oceania"
     legend_regions.append(Patch(facecolor=pastel_colors[r], edgecolor="grey", label=label))
 
+# Fix LNG legend on the map
+from matplotlib.lines import Line2D
+legend_ports = [Line2D([0], [0], marker='o', color='w', label='LNG Ports',
+                        markerfacecolor='black', markersize=6)]
+all_handles = legend_scenarios + legend_regions + legend_ports
 
-all_handles = legend_scenarios + legend_regions
 leg = ax.legend(
     handles=all_handles,
     loc="lower left",
