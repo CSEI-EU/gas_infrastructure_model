@@ -186,20 +186,20 @@ print(df_bars[df_bars["Region"]== "Norway"])
 
 
 legend_scenarios = [
-    Patch(facecolor="#4f81bd", label="2021"),
-    Patch(facecolor="#2ca02c", label="2024"),
-    Patch(facecolor="#ca2e2e", label="2035 Stated Policies"),
-    Patch(facecolor="#732ca0", label="2035 Announced Policies"),
+    Patch(facecolor="#4f81bd", label="Reference Scenario"),
+    Patch(facecolor="#2ca02c", label="Realized Expansion and\nAlternative resilience scenario"),
+    Patch(facecolor="#ca2e2e", label="Planned LNG Expansion\nScenario (Stated Policies)"),
+    Patch(facecolor="#732ca0", label="Planned LNG Expansion\nScenario (Announced Policies)"),
     Patch(facecolor="#b5b4b4", label="Producing European country"),
     Patch(facecolor="#DFDFDF", label="No production"),
 ]
-ax.legend(handles=legend_scenarios, loc="lower left", title="Bar heights sqrt-normalized for scenarios", frameon=True)
+ax.legend(handles=legend_scenarios, loc="lower left", title="Bar heights sqrt-normalized", frameon=True)
 
 # Scale the bar height 
 axins = inset_axes(
     ax, width="2%", height="25%",
     loc="lower left",
-    bbox_to_anchor=(0.1, 0.25, 1, 1),  
+    bbox_to_anchor=(0.1, 0.35, 1, 1),  
     bbox_transform=ax.transAxes,
     borderpad=0
 )

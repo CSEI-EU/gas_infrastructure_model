@@ -244,9 +244,9 @@ for region_name in specific_regions:
 
 # Create two legends, one for bar colors and one for bar heights
 legend_scenarios = [
-    Patch(facecolor="#4f81bd", label="2021"),
-    Patch(facecolor="#2ca02c", label="2024"),
-    Patch(facecolor="#ca2e2e", label="2035"),
+    Patch(facecolor="#4f81bd", label="Reference Scenario"),
+    Patch(facecolor="#2ca02c", label="Realized Expansion and Alternative resilience scenario"),
+    Patch(facecolor="#ca2e2e", label="Planned LNG Expansion Scenario with the Ap and SP variation"),
 ]
 
 # Add Oceania label especially 

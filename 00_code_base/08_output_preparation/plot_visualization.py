@@ -214,9 +214,9 @@ with open(json_file_path, "wb") as f:
 print("JSON File downloaded successfully")
 
 data_path = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "02_prepared_results")
-scenario = "2024"
-full_name = "costs_shares_IAEE_2025_run_2024"
-input_file_cost = os.path.join(data_path, "costs_shares_IAEE_2025_run_2024.xlsx")
+scenario = "2024_plus_NO_reduced"
+full_name = "costs_shares_IAEE_2025_run_2024_plus_NO_reduced"
+input_file_cost = os.path.join(data_path, "costs_shares_IAEE_2025_run_2024_plus_NO_reduced.xlsx")
 
 file_cost_difference_2021 = os.path.join(data_path, "cost_shares_differences_to_2021.xlsx")
 file_cost_difference_2024 = os.path.join(data_path, "cost_shares_differences_to_2024.xlsx")
@@ -226,8 +226,13 @@ colorbar_zero_2021 = 0.32
 colorbar_zero_2024 = 0.65
 colorbar_zero_2035 = 0.77
 
+global_min_2021 = -13700
+global_max_2021 = 11875
+global_min_2024 = -13700
+global_max_2024 = 10500
+
 # plot_cost_map(input_file_cost, scenario, base_path, json_file_path, True)
-plot_cost_difference(file_cost_difference_2021, full_name, scenario, base_path, colorbar_zero_2021, json_file_path, False)
+plot_cost_difference(file_cost_difference_2024, full_name, scenario, base_path, global_min_2024, global_max_2024, json_file_path, True)
 
 # ---------------------------------------------------------------------
 data_path_emissions = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "02_prepared_results")

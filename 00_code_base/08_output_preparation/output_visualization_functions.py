@@ -543,7 +543,6 @@ def convert_to_alpha3(iso2):
         "EL": "GR", 
     }
     iso2 = corrections.get(iso2, iso2)
-
     try:
         return pycountry.countries.get(alpha_2=iso2).alpha_3
     except:
@@ -631,7 +630,7 @@ def plot_cost_map(input_path, scenario, base_path, geojson_path, save):
      
 
 
-def plot_cost_difference(input_difference, full_scenario_name, scenario, base_path, middle_colorbar, geojson_path, save):
+def plot_cost_difference(input_difference, full_scenario_name, scenario, base_path, global_min, global_max, geojson_path, save):
 
     output_file = os.path.join(base_path, "02_plots", "Costs_Results", f"cost_difference_heatmap_{scenario}.png")
     
@@ -648,26 +647,30 @@ def plot_cost_difference(input_difference, full_scenario_name, scenario, base_pa
     df_ukraine = df[df["Node_ISO3"] == "UKR"]
     df_rest = df[df["Node_ISO3"] != "UKR"]
 
+    '''
     z = df[full_scenario_name]
     color_range = [z.min(), z.max()]
     #color_range = [-13000, 7000]
 
     # Percentage for plotting 
     percent_scale = z / z.abs().max() * 100
+    ]'''
+    
+    color_range = [global_min, global_max]
+    global_abs_max = max(abs(global_min), abs(global_max))
 
-    tickvals = list(np.linspace(color_range[0], color_range[1], 5))
-    ticktext = [f"{val / z.abs().max() * 100:.1f}%" for val in tickvals]
+    percent_ticks = [-100, -50, 0, 50, 100]
+    tickvals = [p / 100 * global_abs_max for p in percent_ticks]
+    ticktext = [f"{p}%" for p in percent_ticks]
 
-    # Define the right percentage colorbar 
     middle_colorbar_normalized = (-color_range[0]) / (color_range[1] - color_range[0])
-
-    # Green to red 
     colorscale = [
-    [0.0, 'rgb(0, 128, 0)'],      # Green 
-    [middle_colorbar_normalized, 'rgb(255, 255, 255)'],  # White 
-    [1.0, 'rgb(255, 0, 0)'],      # Red 
+    [0.0, 'rgb(0, 128, 0)'],      
+    [middle_colorbar_normalized, 'rgb(255, 255, 255)'],  
+    [1.0, 'rgb(255, 0, 0)'],      
     ]
 
+    print(df[df["Node_ISO3"] == "TUR"])
     print(convert_to_alpha3('TR'))
 
     fig = go.Figure()
@@ -687,6 +690,7 @@ def plot_cost_difference(input_difference, full_scenario_name, scenario, base_pa
             tickfont=dict(size=12),
             len=0.6,
             y=0.5,
+            x=0.0,
             tickvals=tickvals,   
             ticktext=ticktext 
         ),
@@ -710,7 +714,7 @@ def plot_cost_difference(input_difference, full_scenario_name, scenario, base_pa
 
     fig.update_layout(
         geo=dict(
-            scope='europe',  # or 'world'
+            scope='world',  # or 'world'
             projection_type='natural earth',
             showland=True,
             landcolor='rgb(220, 230, 250)',
@@ -720,7 +724,7 @@ def plot_cost_difference(input_difference, full_scenario_name, scenario, base_pa
             coastlinecolor='rgb(160, 180, 220)',
             center=dict(lat=50, lon=20),
             lataxis=dict(range=[30, 65]),
-            lonaxis=dict(range=[-20, 40]),
+            lonaxis=dict(range=[-25, 40]),
         ),
         margin={"r": 0, "t": 0, "l": 0, "b": 0},
         width=900,
@@ -776,7 +780,7 @@ def plot_cost_difference(input_difference, full_scenario_name, scenario, base_pa
     )'''
 
     if save:
-        fig.write_image(output_file, width=1135, height=800, scale=2)
+        fig.write_image(output_file, width=1135, height=800, scale=3)
     else:
         fig.show()
 
