@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 import numpy as np
 
 # Change parameters for output 
-save_output = False
+save_output = True
 scenarios = ["2021", "2024", "2035 High Demand"] #, "2035 Low Demand"] 
 
 # Input data
@@ -128,8 +128,6 @@ fig.add_trace(go.Scattergeo(
     name="LNG Ports"
 ))
 
-
-# Compute bar heights
 vals_for_scaling = data_gas_prod.loc[data_gas_prod['Country'] != "Total", scenarios].values.flatten()
 vals_for_scaling = np.array(vals_for_scaling, dtype=float)
 global_max_raw = vals_for_scaling.max()
@@ -138,13 +136,11 @@ bar_height_scale = 25
 bar_colors = ["#4f81bd", "#2ca02c", "#ca2e2e"]
 bar_spacing = 2.5
 
-# Fix bar positions for some regions
 bar_position_fixed = {
     "North America": (-98.5, 39.8),
     "Middle East": (41.50, 27.6)
 }
 
-# Add grouped bars
 for region_name, isos in region_to_countries.items():
     if region_name not in data_gas_prod['Country'].values:
         continue
@@ -169,12 +165,19 @@ for region_name, isos in region_to_countries.items():
             lat=[y, y + val],
             mode="lines",
             line=dict(color=bar_colors[i], width=8),
-            showlegend=(region_name==list(region_to_countries.keys())[0]),
-            name=scenarios[i] if (region_name==list(region_to_countries.keys())[0]) else None
+            showlegend=(region_name == list(region_to_countries.keys())[0]),
+            name=(
+    {
+        "2021": "Reference Scenario",
+        "2024": "Realized Expansion and<br>Alternative resilience scenario",
+        "2035 High Demand": "Planned LNG Expansion<br>Scenario with the Ap and SP variation"
+    }[scenarios[i]]
+    if (region_name == list(region_to_countries.keys())[0])
+    else None
+)
         ))
 
-
-# Add bar height scale (rounded numbers)
+# Add bar height legend
 scale_lon, scale_lat = -160, -55
 scale_vals = [0, int(global_max_raw/2), int(global_max_raw)]
 
@@ -195,7 +198,7 @@ for val in scale_vals:
         showlegend=False
     ))
     fig.add_trace(go.Scattergeo(
-        lon=[scale_lon-2],
+        lon=[scale_lon - 2],
         lat=[scale_lat + np.sqrt(val)/global_max_sqrt*bar_height_scale],
         mode="text",
         text=[f"{human_readable(val)} GWh/a"],
@@ -203,39 +206,49 @@ for val in scale_vals:
         textfont=dict(size=10)
     ))
 
-
-# Add traces for region color legend
+# Legend for regions color and items
 for region_name, color in pastel_colors.items():
+    label = "Oceania" if region_name == "Australia" else region_name
     fig.add_trace(go.Scattergeo(
         lon=[None], lat=[None],
         mode="markers",
-        marker=dict(size=10, color=color),
+        marker=dict(size=10, color=color, line=dict(width=0.5, color="grey")),
         showlegend=True,
-        name=region_name
+        name=label
     ))
 
-# Final layout
-fig.update_geos(showcoastlines=True, coastlinecolor="rgb(200,200,200)",
-                showland=False, showocean=False, projection_type="equirectangular")
+
+# Similar layout to previous maps
+fig.update_geos(
+    showland=True,
+    landcolor='rgb(220, 230, 250)',
+    showcountries=True,
+    countrycolor='rgb(180, 200, 230)',
+    showcoastlines=True,
+    coastlinecolor='rgb(160, 180, 220)',
+    projection_type='equirectangular'   #used natural earth but bars are not great
+)
 
 fig.update_layout(
-    height=900, width=1500,
+    height=800,
+    width=1135,
+    margin={"r": 0, "t": 0, "l": 0, "b": 0},
     legend_title_text="Scenarios & Regions",
-    margin={"r":0,"t":40,"l":0,"b":0},
     legend=dict(
         yanchor="bottom",
         y=0.05,
         xanchor="left",
         x=0.02,
         itemsizing="constant",
-        traceorder="normal"
+        traceorder="normal",
+        font=dict(size=12)
     )
 )
 
-fig.show()
-
-# Save output
+# Show or save
 if save_output:
     os.makedirs(output_path, exist_ok=True)
     output_file = os.path.join(output_path, "world_map_bar_plotly.png")
-    fig.write_image(output_file, width=1500, height=900, scale=3)
+    fig.write_image(output_file, width=1135, height=800, scale=2)
+else:
+    fig.show()
