@@ -9,6 +9,7 @@ from year_difference_functions import *
 
 # base_path =r"C:\Users\flv.eco\OneDrive - CBS - Copenhagen Business School\Documents\03_LNG_Cap\hydrogen_grid"
 base_path = r"C:\Users\mar.eco\OneDrive - CBS - Copenhagen Business School\Desktop\hydrogen_grid"
+# base_path =r"C:\Users\jfg.eco\Documents\GitHub\hydrogen_grid"
 #
 
 # Import this for save funcroin to work
@@ -234,15 +235,15 @@ data_path_emissions = os.path.join(base_path, "01_data", "02_output_data", "02_u
 input_file_emissions= os.path.join(data_path_emissions, "emission_differences.xlsx")
 
 emissions_diff = pd.read_excel(input_file_emissions)
-emissions_diff.loc[emissions_diff['Scenario'] == '2021', 'Scenario'] = '2021 - 1. Baseline'
-emissions_diff.loc[emissions_diff['Scenario'] == '2024', 'Scenario'] = '2024 - 2. No Russian imports'
-emissions_diff.loc[emissions_diff['Scenario'] == '2024_inv', 'Scenario'] = '2024 - 3. No Russian imports with investments'
-emissions_diff.loc[emissions_diff['Scenario'] == '2024_no_QA', 'Scenario'] = '2024 - 2.2. No Qatari imports'
-emissions_diff.loc[emissions_diff['Scenario'] == '2024_NO_red', 'Scenario'] = '2024 - 2.3. Reduced Norwegian pipeline exports'
-emissions_diff.loc[emissions_diff['Scenario'] == '2024_no_USA', 'Scenario'] = '2024 - 2.1. NO US imports'
-emissions_diff.loc[emissions_diff['Scenario'] == '2024_with_RU', 'Scenario'] = '2024 - 2.4. Limited Russian imports'
-emissions_diff.loc[emissions_diff['Scenario'] == '2035_SP', 'Scenario'] = '2035 - 4.1. IEA - SP'
-emissions_diff.loc[emissions_diff['Scenario'] == '2035_AP', 'Scenario'] = '2035 - 4.2. IEA - AP'  
+emissions_diff.loc[emissions_diff['Scenario'] == '2021', 'Scenario'] = 'Reference Scenario'
+emissions_diff.loc[emissions_diff['Scenario'] == '2024', 'Scenario'] = 'Realized Expansion Scenario'
+emissions_diff.loc[emissions_diff['Scenario'] == '2024_no_USA', 'Scenario'] = 'Realized Expansion Scenario - US variation'
+emissions_diff.loc[emissions_diff['Scenario'] == '2024_no_QA', 'Scenario'] = 'Realized Expansion Scenario - Qatari variation'
+emissions_diff.loc[emissions_diff['Scenario'] == '2024_NO_red', 'Scenario'] = 'Realized Expansion Scenario - Norwegian variation'
+emissions_diff.loc[emissions_diff['Scenario'] == '2024_with_RU', 'Scenario'] = 'Realized Expansion Scenario - Russian variation'
+emissions_diff.loc[emissions_diff['Scenario'] == '2024_inv', 'Scenario'] = 'Alternative Resilience Scenario'
+emissions_diff.loc[emissions_diff['Scenario'] == '2035_SP', 'Scenario'] = 'Plannes LNG Expansion Scenario - SP variation'
+emissions_diff.loc[emissions_diff['Scenario'] == '2035_AP', 'Scenario'] = 'Plannes LNG Expansion Scenario - AP variation'  
 
 emissions_diff.sort_values(by='Scenario', inplace=True)
 
