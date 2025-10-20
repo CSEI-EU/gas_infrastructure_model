@@ -132,7 +132,7 @@ vals_for_scaling = data_gas_prod.loc[data_gas_prod['Country'] != "Total", scenar
 vals_for_scaling = np.array(vals_for_scaling, dtype=float)
 global_max_raw = vals_for_scaling.max()
 global_max_sqrt = np.sqrt(global_max_raw)
-bar_height_scale = 25
+bar_height_scale = 28
 bar_colors = ["#4f81bd", "#2ca02c", "#ca2e2e"]
 bar_spacing = 2.5
 
@@ -178,7 +178,7 @@ for region_name, isos in region_to_countries.items():
         ))
 
 # Add bar height legend
-scale_lon, scale_lat = -160, -55
+scale_lon, scale_lat = 170, 0
 scale_vals = [0, int(global_max_raw/2), int(global_max_raw)]
 
 def human_readable(val):
@@ -194,11 +194,11 @@ for val in scale_vals:
         lon=[scale_lon, scale_lon],
         lat=[scale_lat, scale_lat + np.sqrt(val)/global_max_sqrt*bar_height_scale],
         mode="lines",
-        line=dict(color="lightgrey", width=8),
+        line=dict(color="darkgrey", width=8),
         showlegend=False
     ))
     fig.add_trace(go.Scattergeo(
-        lon=[scale_lon - 2],
+        lon=[scale_lon - 15],
         lat=[scale_lat + np.sqrt(val)/global_max_sqrt*bar_height_scale],
         mode="text",
         text=[f"{human_readable(val)} GWh/a"],
@@ -236,7 +236,7 @@ fig.update_layout(
     legend_title_text="Scenarios & Regions",
     legend=dict(
         yanchor="bottom",
-        y=0.05,
+        y=0.2,
         xanchor="left",
         x=0.02,
         itemsizing="constant",
