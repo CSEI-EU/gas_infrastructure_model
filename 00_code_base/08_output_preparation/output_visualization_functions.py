@@ -624,7 +624,7 @@ def plot_cost_map(input_path, scenario, base_path, geojson_path, save):
     )
 
     if save:
-        fig.write_image(output_file, width=1135, height=800, scale=2)
+        fig.write_image(output_file, width=900, height=650, scale=2)
     else:
         fig.show()
      
@@ -780,7 +780,7 @@ def plot_cost_difference(input_difference, full_scenario_name, scenario, base_pa
     )'''
 
     if save:
-        fig.write_image(output_file, width=1135, height=800, scale=3)
+        fig.write_image(output_file, width=900, height=650, scale=3)
     else:
         fig.show()
 

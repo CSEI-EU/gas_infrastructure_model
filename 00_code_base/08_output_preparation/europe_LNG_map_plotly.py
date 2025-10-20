@@ -4,6 +4,8 @@ import numpy as np
 import plotly.graph_objects as go
 import requests
 import json
+from shapely.geometry import shape
+import shapely
 
 save_output = True
 scenarios = ["2021", "2024", "2035 High Demand", "2035 Low Demand"]
@@ -25,12 +27,14 @@ for c in ["Sweden", "Montenegro"]:
             data_gas_prod,
             pd.DataFrame([{"Country": c, **{s: 0.0 for s in scenarios}}])
         ], ignore_index=True)
-excel_countries = [c for c in data_gas_prod["Country"].unique() if c != "Total"]
+
+# Exclude Total row for plot and calculations
+excel_countries = data_gas_prod[data_gas_prod["Country"] != "Total"].copy()
 
 # Output path
 output_path = "02_plots"
 
-# Fix all countries names
+# Country ISO3 mapping
 country_name_to_iso3 = {
     "Albania": "ALB", "Austria": "AUT", "Belarus": "BLR", "Belgium": "BEL",
     "Bosnia and Herzegovina": "BIH", "Bulgaria": "BGR", "Croatia": "HRV",
@@ -44,25 +48,31 @@ country_name_to_iso3 = {
     "UK": "GBR", "Ukraine": "UKR", "Kosovo": "XKX", "Sweden": "SWE",
     "Montenegro": "MNE", "Malta": "MLT"
 }
-data_gas_prod["ISO_A3"] = data_gas_prod["Country"].map(country_name_to_iso3)
+excel_countries["ISO_A3"] = excel_countries["Country"].map(country_name_to_iso3)
 
-# Pastel colors 
-pastel_colors = {"Producing": "#b5b4b4", "Non-Producing": "#DFDFDF"}
+# Country colors (Producing vs Non-Producing)
+pastel_colors = {"Producing": "#a1a0a0", "Non-Producing": "#dddddd"}
 def country_color(row):
     vals = row[scenarios].values
     return pastel_colors["Producing"] if np.any(vals > 0) else pastel_colors["Non-Producing"]
-data_gas_prod["color"] = data_gas_prod.apply(country_color, axis=1)
 
-# Find global max
-vals_for_scaling = data_gas_prod.loc[data_gas_prod['Country'] != "Total", scenarios].values.flatten()
+excel_countries["color"] = excel_countries.apply(country_color, axis=1)
+
+# Bar scaling setup
+vals_for_scaling = excel_countries[scenarios].values.flatten()
 global_max_raw = np.max(vals_for_scaling)
 global_max_sqrt = np.sqrt(global_max_raw)
-bar_height_scale = 6
+bar_height_scale = 7
 bar_colors = ["#4f81bd", "#2ca02c", "#ca2e2e", "#732ca0"]
 bar_spacing = 0.7
-bar_position_fixed = {"Slovakia": (0.6, 0), "Hungary": (-0.6, 0), "Norway": (-6, -4)}
+bar_position_fixed = {
+    "Slovakia": (0.6, 0),
+    "Hungary": (-0.6, 0),
+    "Norway": (2, 0),
+    "Germany": (1, 0)
+}
 
-
+# Country coordinates
 COUNTRY_COORDINATES = {
     'ALB': (20.1683, 41.1533), 'AUT': (14.5501, 47.5162), 'BLR': (27.9534, 53.7098),
     'BEL': (4.3517, 50.8503), 'BIH': (17.6791, 43.9159), 'BGR': (25.4858, 42.7339),
@@ -80,9 +90,9 @@ COUNTRY_COORDINATES = {
 }
 
 def get_country_coordinates(iso3):
-    return COUNTRY_COORDINATES.get(iso3, (10, 50))  # fallback to central Europe
+    return COUNTRY_COORDINATES.get(iso3, (10, 50))
 
-# Fix Crimea handling
+# Load Ukraine GeoJSON (Crimea fix)
 ukraine_json_url = "https://geodata.ucdavis.edu/gadm/gadm4.1/json/gadm41_UKR_0.json"
 ukraine_json_path = os.path.join("00_code_base", "08_output_preparation", "gadm41_UKR_0.json")
 if not os.path.exists(ukraine_json_path):
@@ -92,9 +102,6 @@ if not os.path.exists(ukraine_json_path):
 with open(ukraine_json_path, "r", encoding="utf-8") as f:
     ukraine_geojson = json.load(f)
 
-from shapely.geometry import shape
-import shapely
-
 def get_centroid_from_geojson(geojson_feature):
     geom = shape(geojson_feature["geometry"])
     if isinstance(geom, shapely.geometry.multipolygon.MultiPolygon):
@@ -103,43 +110,66 @@ def get_centroid_from_geojson(geojson_feature):
     else:
         return geom.centroid
 
-# Create the figure
+# Create figure
 fig = go.Figure()
 
-# Europe base map
+# Add base layer: non-producing countries
+non_prod_countries = excel_countries[excel_countries["color"] == pastel_colors["Non-Producing"]]
 fig.add_trace(go.Choropleth(
-    locations=data_gas_prod["ISO_A3"],
-    z=np.zeros(len(data_gas_prod)),
-    colorscale=[[0, "lightgrey"], [1, "lightgrey"]],
+    locations=non_prod_countries["ISO_A3"],
+    z=[0]*len(non_prod_countries),
+    colorscale=[[0, pastel_colors["Non-Producing"]], [1, pastel_colors["Non-Producing"]]],
     showscale=False,
     marker_line_color='white',
     marker_line_width=0.5,
-    name="Europe"
+    name="Not producing",
+    showlegend=True
+))
+
+# Add producing countries (gray)
+prod_countries = excel_countries[excel_countries["color"] == pastel_colors["Producing"]]
+fig.add_trace(go.Choropleth(
+    locations=prod_countries["ISO_A3"],
+    z=[0]*len(prod_countries),
+    colorscale=[[0, pastel_colors["Producing"]], [1, pastel_colors["Producing"]]],
+    showscale=False,
+    marker_line_color='white',
+    marker_line_width=0.5,
+    name="Producing European country",
+    showlegend=True
 ))
 
 # Ukraine separately
-ukr_row = data_gas_prod[data_gas_prod["ISO_A3"]=="UKR"]
+ukr_row = excel_countries[excel_countries["ISO_A3"]=="UKR"]
 if not ukr_row.empty:
+    color_type = "Producing" if (ukr_row[scenarios].values > 0).any() else "Non-Producing"
     fig.add_trace(go.Choropleth(
         geojson=ukraine_geojson,
         featureidkey="properties.GID_0",
         locations=ukr_row["ISO_A3"],
         z=[0],
-        colorscale=[[0, "lightgrey"], [1, "lightgrey"]],
+        colorscale=[[0, pastel_colors[color_type]], [1, pastel_colors[color_type]]],
         showscale=False,
         marker_line_color='white',
         marker_line_width=0.5,
-        name="Ukraine"
+        name="Ukraine",
+        showlegend=False
     ))
 
-# Bar plot 
-for idx, row in data_gas_prod.iterrows():
+# Bar plots
+scenario_labels = [
+    "Reference Scenario",
+    "Realized Expansion and<br>Alternative resilience scenario",
+    "Planned LNG Expansion<br>Scenario (Stated Policies)",
+    "Planned LNG Expansion<br>Scenario (Announced Policies)"
+]
+
+for idx, row in excel_countries.iterrows():
     iso3 = row["ISO_A3"]
     vals = np.array(row[scenarios], dtype=float)
     vals = np.nan_to_num(vals, nan=0.0)
     vals_scaled = np.sqrt(vals) / global_max_sqrt * bar_height_scale
 
-    # Centroid
     if iso3 == "UKR":
         centroid = get_centroid_from_geojson(ukraine_geojson["features"][0])
         x, y = centroid.x, centroid.y
@@ -147,7 +177,6 @@ for idx, row in data_gas_prod.iterrows():
         lon, lat = get_country_coordinates(iso3)
         x, y = lon, lat
 
-    # Apply small manual offsets
     if row["Country"] in bar_position_fixed:
         x += bar_position_fixed[row["Country"]][0]
         y += bar_position_fixed[row["Country"]][1]
@@ -159,28 +188,96 @@ for idx, row in data_gas_prod.iterrows():
             lat=[y, y+val],
             mode="lines",
             line=dict(color=bar_colors[i], width=6),
-            showlegend=(idx==0),
-            name=(scenarios[i] if idx==0 else None)
+            name=scenario_labels[i] if idx==0 else None,
+            showlegend=(idx==0)
         ))
 
-
+# Layout and legend
 fig.update_geos(
+    scope='world',
+    projection_type='natural earth',
     showland=True,
-    landcolor='rgb(220, 230, 250)',
+    landcolor='rgb(240, 245, 255)',
     showcountries=True,
     countrycolor='rgb(180, 200, 230)',
     showcoastlines=True,
     coastlinecolor='rgb(160, 180, 220)',
-    projection_type='natural earth',
-    center=dict(lat=55, lon=15),
-    lataxis_range=[34,72],
-    lonaxis_range=[-25,45]
+    center=dict(lat=50, lon=20),
+    lataxis=dict(range=[30, 65]),
+    lonaxis=dict(range=[-25, 40]),
 )
-fig.update_layout(height=800, width=1135, margin={"r":0,"t":0,"l":0,"b":0})
+
+fig.update_layout(
+        geo=dict(
+            scope='world',  # or 'world'
+            projection_type='natural earth',
+            showland=True,
+            landcolor='rgb(220, 230, 250)',
+            showcountries=True,
+            countrycolor='rgb(180, 200, 230)',
+            showcoastlines=True,
+            coastlinecolor='rgb(160, 180, 220)',
+            center=dict(lat=50, lon=20),
+            lataxis=dict(range=[30, 65]),
+            lonaxis=dict(range=[-25, 40]),
+        ),
+        legend=dict(
+            x=0.965,  
+            y=0.92,
+            xanchor='right',
+            yanchor='top',
+            bgcolor='rgba(255, 255, 255, 0.8)',
+            bordercolor='rgba(0, 0, 0, 0.8)',
+            borderwidth=1,
+        ),
+        margin={"r": 0, "t": 0, "l": 0, "b": 0},
+        width=900,
+        height=650
+    )
+
+def human_readable(val):
+    absolute_val = val * global_max_raw  
+    if absolute_val >= 1_000_000:
+        return f"{round(absolute_val/1_000_000,1)}M"
+    elif absolute_val >= 1_000:
+        return f"{round(absolute_val/1_000)}k"
+    else:
+        return str(int(absolute_val))
+    
+# Base coordinates for the legend
+scale_lon, scale_lat = 45, 48  # adjust as needed
+legend_bar_width = 8
+legend_label_offset_lon = 3  # distance of label from bar
+
+# Fractions of the maximum for intermediate bars
+scale_vals = [0.25, 0.5, 0.75, 1.0]
+
+for val_frac in scale_vals:
+    val_height = np.sqrt(val_frac * global_max_raw) / global_max_sqrt * bar_height_scale
+    
+    # Draw vertical bar 
+    fig.add_trace(go.Scattergeo(
+        lon=[scale_lon, scale_lon + 0.3],
+        lat=[scale_lat, scale_lat + val_height],
+        mode="lines",
+        line=dict(color="darkgrey", width=legend_bar_width),
+        showlegend=False
+    ))
+    
+    # Draw the label 
+    fig.add_trace(go.Scattergeo(
+        lon=[scale_lon - legend_label_offset_lon],
+        lat=[scale_lat + val_height],
+        mode="text",
+        text=[f"{human_readable(val_frac)} GWh/a"],
+        showlegend=False,
+        textfont=dict(size=10, color="black"),
+        hoverinfo='skip'
+    ))
 
 # Show or save
 if save_output:
     os.makedirs(output_path, exist_ok=True)
-    fig.write_image(os.path.join(output_path, "europe_bar_plot_simple.png"), width=1135, height=800, scale=2)
+    fig.write_image(os.path.join(output_path, "europe_bar_plot_simple.png"), width=900, height=600, scale=2)
 else:
     fig.show()

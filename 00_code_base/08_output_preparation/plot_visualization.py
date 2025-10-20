@@ -147,7 +147,7 @@ fig = plot_flow_map(df_final, filtered_ports, df_with_imports, filtered_LNG_IMPO
 
 #Save the figure
 if save_flow_no_invest: 
-    fig.write_image(output_path_no_invest + ".png", width=1135, height=800, scale=2)
+    fig.write_image(output_path_no_invest + ".png", width=900, height=650, scale=2)
     utilization_summary.to_excel(output_path_xlsx, index=False)
     bar_fig.write_image(output_path_no_invest + '_bar_chart.png', width=1135, height=800, scale=2)
 
@@ -197,7 +197,7 @@ df_clean = process_pipelines(df_invest, file_name_invest, input_excluded_pipelin
 fig = plot_flow_map(df_clean, filtered_ports, df_with_imports, filtered_LNG_IMPORT_COORDS)
 
 if save_flow_invest: 
-    fig.write_image(output_path_invest + ".png", width=1135, height=800, scale=2)
+    fig.write_image(output_path_invest + ".png", width=900, height=650, scale=2)
     utilization_summary_invest.to_excel(output_path_invest_xlsx, index=False)
     bar_fig.write_image(output_path_invest + '_bar_chart.png', width=1135, height=800, scale=2)
 
