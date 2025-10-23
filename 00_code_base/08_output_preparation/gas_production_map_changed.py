@@ -11,14 +11,16 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 save_output = False
 scenarios = ["2021", "2024", "2035 High Demand"] #, "2035 Low Demand"] 
 
+base_path = r"C:\Users\jfg.eco\Documents\hydrogen_grid"
+
 # Input data
-input_file_path = os.path.join('01_data', '01_input_data', '02_processed', '01_paper_IAEE', '01_data_sheets_input')
+input_file_path = os.path.join(base_path, '01_data', '01_input_data', '02_processed', '01_paper_IAEE', '01_data_sheets_input')
 input_file = '\\paper_paris_2025_input_production_world.xlsx'
 full_input_path = os.path.abspath(os.path.join(os.getcwd(), input_file_path + input_file))
 data_gas_prod = pd.read_excel(full_input_path)
 
 # LNG port locations 
-LNG_location_path = os.path.join('01_data', '01_input_data', '01_raw', '01_Russian_War_Case')
+LNG_location_path = os.path.join(base_path, '01_data', '01_input_data', '01_raw', '01_Russian_War_Case')
 LNG_file = '\\LNG_locations.xlsx'
 full_LNG_path = os.path.abspath(os.path.join(LNG_location_path + LNG_file))
 ports_df = pd.read_excel(full_LNG_path, sheet_name="Global")
@@ -31,13 +33,13 @@ ports_df['Longitude'] = ports_df['Longitude'].astype(str).str.replace(',', '.').
 output_path = os.path.join('02_plots')
 
 # World shapefile
-shapefile_path = os.path.join('01_data', '01_input_data', '01_raw', 'world_countries_shapefile')
+shapefile_path = os.path.join(base_path, '01_data', '01_input_data', '01_raw', 'world_countries_shapefile')
 shapefile = '\\ne_50m_admin_0_countries_lakes.shp'
 full_shapefile_path = os.path.abspath(os.path.join(os.getcwd(), shapefile_path + shapefile))
 
 # Fix Crimea handling (attach to Ukraine instead or Russia)
 ukraine_json_url = "https://geodata.ucdavis.edu/gadm/gadm4.1/json/gadm41_UKR_0.json"
-ukraine_json_path = os.path.join("00_code_base", "08_output_preparation", "gadm41_UKR_0.json")
+ukraine_json_path = os.path.join(base_path, "00_code_base", "08_output_preparation", "gadm41_UKR_0.json")
 response = requests.get(ukraine_json_url)
 with open(ukraine_json_path, "wb") as f:
     f.write(response.content)

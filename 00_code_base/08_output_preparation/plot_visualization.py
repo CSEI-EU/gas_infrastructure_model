@@ -8,7 +8,8 @@ from LNG_external_imports_functions import *
 from year_difference_functions import *
 
 # base_path =r"C:\Users\flv.eco\OneDrive - CBS - Copenhagen Business School\Documents\03_LNG_Cap\hydrogen_grid"
-base_path = r"C:\Users\mar.eco\OneDrive - CBS - Copenhagen Business School\Desktop\hydrogen_grid"
+# base_path = r"C:\Users\mar.eco\OneDrive - CBS - Copenhagen Business School\Desktop\hydrogen_grid"
+base_path = r"C:\Users\jfg.eco\Documents\hydrogen_grid"
 #
 
 # Import this for save funcroin to work

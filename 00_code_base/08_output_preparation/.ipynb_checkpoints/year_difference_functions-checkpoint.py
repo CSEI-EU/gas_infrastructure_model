@@ -1,0 +1,142 @@
+# import packages
+import pandas as pd
+import os
+import plotly.graph_objects as go
+
+from output_visualization_functions import *
+
+# To identify if the terminals have increase their capacity or if they are completely new
+def identify_terminal_status(df_ports, year):
+    df_ports = df_ports.copy()
+
+    # All terminals across all years
+    location_years = df_ports.groupby(['Latitude', 'Longitude'])['Model Year'].unique().reset_index()
+
+    # See which were already existing before
+    def classify(row):
+        years = row['Model Year']
+        if year in years and any(y < year for y in years):
+            return 'upgraded'
+        elif year in years and all(y >= year for y in years):
+            return 'new'
+        else:
+            return 'old'
+
+    location_years['Status'] = location_years.apply(classify, axis=1)
+
+    # Get the status for each row
+    df_ports = df_ports.merge(location_years[['Latitude', 'Longitude', 'Status']], on=['Latitude', 'Longitude'], how='left')
+    df_ports.loc[df_ports['Model Year'] < year, 'Status'] = 'old'
+
+    return df_ports
+
+
+# -----------------------------------------------------------------------------------------
+# Processing of pipelines excluded for 2024 scenarios 
+def build_edges(df):
+    return set(df.apply(lambda row: f"{row['Source'].strip()}, {row['Destination'].strip()}", axis=1))
+
+
+def scenario_pipeline_exclusions(input_excluded_pipelines, pipeline_edges):
+    excluded_all = build_edges(pd.read_excel(input_excluded_pipelines, sheet_name='2024'))
+    excluded_wRU = build_edges(pd.read_excel(input_excluded_pipelines, sheet_name='2024_wRU'))
+    excluded_NOR = build_edges(pd.read_excel(input_excluded_pipelines, sheet_name='2024_NOR'))
+
+    pipeline_status = {}
+
+    for edge in pipeline_edges:
+        edge_clean = edge.replace("'", "").strip() if isinstance(edge, str) else str(edge).strip()
+        in_all = edge_clean in excluded_all
+        in_wRU = edge_clean in excluded_wRU
+        in_NOR = edge_clean in excluded_NOR
+
+        if in_all and not in_wRU:
+            pipeline_status[edge] = 'included_in_wRU_only'
+        elif in_all:
+            pipeline_status[edge] = 'excluded_for_all'
+        elif in_NOR:
+            pipeline_status[edge] = 'excluded_for_NOR_only'
+        else:
+            pipeline_status[edge] = 'included'
+
+    return pipeline_status
+# -----------------------------------------------------------------------------------------
+
+# Plot the map according to each scenario year 
+def plot_map(df_ports, pipelines_df, pipeline_status, year, base_path, save):
+    output_path = os.path.join(base_path, "02_plots", f"base_map_{year}.png")
+    fig = go.Figure()
+
+    # LNG Terminals
+    color_map_ports = {'old': 'black', 'upgraded': 'blue', 'new': 'green'}
+    for status in ['old', 'upgraded', 'new']:
+        ports = df_ports[df_ports['Status'] == status]
+        fig.add_trace(go.Scattergeo(
+            lon=ports['Longitude'],
+            lat=ports['Latitude'],
+            mode='markers',
+            marker=dict(size=6, color=color_map_ports[status], symbol='circle'),
+            name=f'LNG Terminal ({status})'
+        ))
+
+    # Pipelines
+    color_map = {
+        'included': 'gray',
+        'excluded_for_all': 'red',
+        'excluded_for_NOR_only': 'purple',
+        'included_in_wRU_only': 'red',
+    }
+
+    status_name_map = {
+        'included': 'Included',
+        'excluded_for_all': 'Excluded in all',
+        'excluded_for_NOR_only': 'Excluded in Norway scenario only',
+        'included_in_wRU_only': 'Included only in Russia scenario',
+    }
+
+    legend_shown = set()
+    for _, row in pipelines_df.iterrows():
+        edge = row['Edge']
+        status = pipeline_status.get(edge, 'included')
+        color = color_map.get(status, 'gray')
+
+        show_legend = status not in legend_shown
+        legend_shown.add(status)
+
+        line_style = dict(width=2, color=color)
+        if status == 'included_in_wRU_only':
+            line_style['dash'] = 'dot'
+
+        fig.add_trace(go.Scattergeo(
+            lon=[row['Source_lon'], row['Target_lon']],
+            lat=[row['Source_lat'], row['Target_lat']],
+            mode='lines',
+            line=line_style,
+            name=status_name_map.get(status, 'Included'),
+            showlegend=show_legend
+        ))
+
+    fig.update_layout(
+        geo=dict(
+            scope='world',
+            projection_type='natural earth',
+            showland=True,
+            landcolor='rgb(220, 230, 250)',
+            showcountries=True,
+            countrycolor='rgb(180, 200, 230)',
+            showcoastlines=True,
+            coastlinecolor='rgb(160, 180, 220)',
+            center=dict(lat=50, lon=20),
+            lataxis=dict(range=[30, 65]),
+            lonaxis=dict(range=[-20, 40]),
+        ),
+        width=900,
+        height=650,
+    )
+
+    if save:
+        fig.write_image(output_path, width=1135, height=800, scale=2)
+    else:
+        fig.show()
+
+    return fig
