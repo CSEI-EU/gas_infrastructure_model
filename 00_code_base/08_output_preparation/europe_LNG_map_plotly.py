@@ -22,6 +22,7 @@ base_path = r"C:\Users\jfg.eco\Documents\hydrogen_grid"
 
 # Input data
 input_file_path = os.path.join(base_path, '01_data', '01_input_data', '02_processed', '01_paper_IAEE', '01_data_sheets_input')
+#input_file = 'paper_paris_2025_input_consumption_europe.xlsx'
 input_file = 'paper_paris_2025_input_production_europe_capacities.xlsx'
 full_input_path = os.path.join(input_file_path, input_file)
 data_gas_prod = pd.read_excel(full_input_path)
@@ -253,7 +254,7 @@ fig.write_image(output_svg_name, format="svg")
 
 
 # ---------- LOAD SAVED MAP ----------
-map_img = mpimg.imread("europe_map_background.svg")
+map_img = mpimg.imread("europe_map_background.png")
 img_height, img_width, _ = map_img.shape
 
 fig, ax = plt.subplots(figsize=(img_width/100, img_height/100))
