@@ -18,12 +18,14 @@ legend_in_bars = True  # set False if you want the map legend visible
 save_output = False
 scenarios = ["2021", "2024", "2035 High Demand", "2035 Low Demand"]
 
-base_path = r"C:\Users\jfg.eco\Documents\hydrogen_grid"
+# base_path = r"C:\Users\jfg.eco\Documents\hydrogen_grid"
+base_path = r"C:\Users\mar.eco\OneDrive - CBS - Copenhagen Business School\Desktop\hydrogen_grid"
+
 
 # Input data
 input_file_path = os.path.join(base_path, '01_data', '01_input_data', '02_processed', '01_paper_IAEE', '01_data_sheets_input')
-#input_file = 'paper_paris_2025_input_consumption_europe.xlsx'
-input_file = 'paper_paris_2025_input_production_europe_capacities.xlsx'
+input_file = 'paper_paris_2025_input_consumption_europe.xlsx'
+# input_file = 'paper_paris_2025_input_production_europe_capacities.xlsx'
 full_input_path = os.path.join(input_file_path, input_file)
 data_gas_prod = pd.read_excel(full_input_path)
 
@@ -38,6 +40,9 @@ for c in ["Sweden", "Montenegro"]:
             data_gas_prod,
             pd.DataFrame([{"Country": c, **{s: 0.0 for s in scenarios}}])
         ], ignore_index=True)
+
+# Correct typo in Country column
+data_gas_prod["Country"] = data_gas_prod["Country"].replace({"Irland": "Ireland"})
 
 # Exclude Total row for plot and calculations
 excel_countries = data_gas_prod[data_gas_prod["Country"] != "Total"].copy()
@@ -67,17 +72,17 @@ excel_countries["ISO_A3"] = excel_countries["Country"].map(country_name_to_iso3)
 pastel_colors = {"Producing": "#a1a0a0", "Non-Producing": "#dddddd"}
 def country_color(row):
     vals = row[scenarios].values
-    return pastel_colors["Producing"] if np.any(vals > 0) else pastel_colors["Non-Producing"]
+    return pastel_colors["Producing"] if np.any(vals != 0) else pastel_colors["Non-Producing"]
 
 excel_countries["color"] = excel_countries.apply(country_color, axis=1)
 
 # Bar scaling setup
 vals_for_scaling = excel_countries[scenarios].values.flatten()
-global_max_raw = np.max(vals_for_scaling)
+global_max_raw = np.max(np.abs(vals_for_scaling))
 global_max_sqrt = np.sqrt(global_max_raw)
 bar_height_scale = 1
 bar_colors = ["#4f81bd", "#2ca02c", "#ca2e2e", "#732ca0"]
-bar_spacing = 0.7
+bar_spacing = 0.6
 
 
 
@@ -174,7 +179,7 @@ fig.add_trace(go.Choropleth(
 # Ukraine separately (if applicable)
 ukr_row = excel_countries[excel_countries["ISO_A3"] == "UKR"]
 if not ukr_row.empty:
-    color_type = "Producing" if (ukr_row[scenarios].values > 0).any() else "Non-Producing"
+    color_type = "Producing" if (ukr_row[scenarios].values != 0).any() else "Non-Producing"
     fig.add_trace(go.Choropleth(
         geojson=ukraine_geojson,
         featureidkey="properties.GID_0",
@@ -246,7 +251,7 @@ fig.update_layout(legend=dict(
 ))
 
 # Show figure
-fig.show()
+# fig.show()
 
 # Save as image for background
 fig.write_image(map_image_name, width=900, height=650, engine="kaleido")
@@ -282,8 +287,34 @@ COUNTRY_COORDINATES_ADJUSTED = {
     for iso, (lon, lat) in COUNTRY_COORDINATES.items()
 }
 
+manual_offsets = {
+    "DEU": (0, 20),       
+    "IRL": (5, 0),         
+    "DNK": (0, 5),         
+    "NOR": (20, 0),        
+    "FIN": (-20, 10),     
+    "EST": (-5, 20),       
+    "LVA": (-5, 20),    
+    "LTU": (-10, 25), 
+    "NLD": (0, -10),
+    "SVN": (-5, -5), 
+    "BIH": (0, -5), 
+    "SRB": (0, -10), 
+    "ALB": (-5, 0), 
+    "MNE": (-5, 0), 
+    "MKD": (5, 0),
+    "SVK": (0, -10), 
+    "HUN": (-5, 5),
+}
+
+# Apply the offsets
+for iso, (dx, dy) in manual_offsets.items():
+    if iso in COUNTRY_COORDINATES_ADJUSTED:
+        x, y = COUNTRY_COORDINATES_ADJUSTED[iso]
+        COUNTRY_COORDINATES_ADJUSTED[iso] = (x + dx, y + dy)
+
 # ---------- PLOT BARS ----------
-bar_height_scale = 100
+bar_height_scale = 60
 bar_spacing = 15
 bar_colors = ["#4f81bd", "#2ca02c", "#ca2e2e", "#732ca0"]
 scenario_labels = [
@@ -297,7 +328,7 @@ for idx, row in excel_countries.iterrows():
     iso3 = row["ISO_A3"]
     vals = np.array(row[scenarios], dtype=float)
     vals = np.nan_to_num(vals, nan=0.0)
-    vals_scaled = np.sqrt(vals) / global_max_sqrt * bar_height_scale
+    vals_scaled = np.sqrt(np.abs(vals)) / global_max_sqrt * bar_height_scale
 
     x, y = COUNTRY_COORDINATES_ADJUSTED.get(iso3, (None, None))
     if x is None:
@@ -327,8 +358,8 @@ handles_legend = legend_scenarios + legend_countries
 # Place legend a bit higher and layout as 2 rows x 3 columns
 ax.legend(
     handles=handles_legend,
-    loc="lower left",
-    bbox_to_anchor=(-0.005, 0.07),  # lift legend a bit higher
+    loc="lower center",
+    bbox_to_anchor=(0.5, 0.06),
     ncol=3,                       # 3 columns
     frameon=True,
     fontsize=7
@@ -340,8 +371,8 @@ axins = inset_axes(
     ax,
     width="2%",       # thin vertical bar
     height="25%",     # relative height
-    loc="lower left",
-    bbox_to_anchor=(0.07, 0.2, 1, 1),  # position on figure
+    loc="lower right", 
+    bbox_to_anchor=(-0.05, 0.3, 1, 1), # position on figure
     bbox_transform=ax.transAxes,
     borderpad=0
 )
@@ -350,11 +381,11 @@ axins = inset_axes(
 scale_factor = bar_height_scale  # max visual bar height
 
 # Draw a single grey bar to show the max height
-axins.bar(0, scale_factor, width=0.6, color="lightgrey", edgecolor="black")
+axins.bar(0, scale_factor, width=0.6, color="lightgrey")
 
 # Tick values and labels
 tick_vals = np.linspace(0, scale_factor, 5)
-tick_labels = [human_readable((val / scale_factor) * global_max_raw) for val in tick_vals]
+tick_labels = [human_readable((val / scale_factor)**2 * global_max_raw) for val in tick_vals]
 
 # Set ticks
 axins.set_ylim(0, scale_factor)
