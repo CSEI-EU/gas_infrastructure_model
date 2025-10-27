@@ -10,7 +10,8 @@ scenarios = ["2021", "2024", "2035 High Demand"] #, "2035 Low Demand"]
 
 # Input data
 input_file_path = os.path.join('01_data', '01_input_data', '02_processed', '01_paper_IAEE', '01_data_sheets_input')
-input_file = '\\paper_paris_2025_input_production_world.xlsx'
+input_file = '\\paper_paris_2025_input_consumption_world.xlsx' # Change to production or consumption
+title_plot = "world_map_bar_plotly_cons.png"
 full_input_path = os.path.abspath(os.path.join(os.getcwd(), input_file_path + input_file))
 data_gas_prod = pd.read_excel(full_input_path)
 
@@ -134,7 +135,7 @@ global_max_raw = vals_for_scaling.max()
 global_max_sqrt = np.sqrt(global_max_raw)
 bar_height_scale = 28
 bar_colors = ["#4f81bd", "#2ca02c", "#ca2e2e"]
-bar_spacing = 2.5
+bar_spacing = 3
 
 bar_position_fixed = {
     "North America": (-98.5, 39.8),
@@ -178,7 +179,7 @@ for region_name, isos in region_to_countries.items():
         ))
 
 # Add bar height legend
-scale_lon, scale_lat = 170, 0
+scale_lon, scale_lat = -150, -50
 scale_vals = [0, int(global_max_raw/2), int(global_max_raw)]
 
 def human_readable(val):
@@ -231,24 +232,27 @@ fig.update_geos(
 
 fig.update_layout(
     height=800,
-    width=1135,
+    width=1130,
     margin={"r": 0, "t": 0, "l": 0, "b": 0},
-    legend_title_text="Scenarios & Regions",
     legend=dict(
+        orientation="h",        
         yanchor="bottom",
-        y=0.2,
+        y=0.15,                  
         xanchor="left",
-        x=0.02,
+        x=0.02,                 
         itemsizing="constant",
         traceorder="normal",
-        font=dict(size=12)
+        font=dict(size=12),
+        #bgcolor="rgba(255,255,255,0.85)",  
+        bordercolor="lightgrey",
+        borderwidth=1,
     )
 )
 
 # Show or save
 if save_output:
     os.makedirs(output_path, exist_ok=True)
-    output_file = os.path.join(output_path, "world_map_bar_plotly.png")
+    output_file = os.path.join(output_path, title_plot)
     fig.write_image(output_file, width=1135, height=800, scale=2)
 else:
     fig.show()

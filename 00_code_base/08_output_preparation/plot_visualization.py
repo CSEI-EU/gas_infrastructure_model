@@ -94,14 +94,16 @@ pipeline_status_2024 = scenario_pipeline_exclusions(input_excluded_pipelines, pi
 df_ports_2035 = identify_terminal_status(filtered_ports, 2035)
 df_2035 = process_file(baseline_path_2035)
 pipelines_2035 = df_2035[(df_2035['FromType'] == '-') & (df_2035['ToType'] == '-')]
-pipeline_status_2035 = {edge: 'included' for edge in pipelines_2035['Edge']}
+pipeline_status_2035 = scenario_pipeline_exclusions_RU(input_excluded_pipelines, pipelines_2035['Edge'].dropna().unique())
 
 #plot_map(df_ports_2021, pipelines_2021, pipeline_status_2021, 2021, base_path, False)
 #plot_map(df_ports_2024, pipelines_2024, pipeline_status_2024, 2024, base_path, False)
 #plot_map(df_ports_2035, pipelines_2035, pipeline_status_2035, 2035, base_path, False)
 
+plot_three_years_subplots(df_ports_2021, pipelines_2021, pipeline_status_2021, df_ports_2024, pipelines_2024, pipeline_status_2024,df_ports_2035, pipelines_2035, pipeline_status_2035,base_path,save=True)
 
 
+'''
 # -----------------------------------------------------------------------
 df_no_invest = process_file(output_file_no_invest)
 df_with_imports = df_no_invest[(df_no_invest['FromType'] == 'LNG_import')]
@@ -253,3 +255,5 @@ emissions_diff.loc[emissions_diff['Scenario'] == '2035_AP', 'Scenario'] = '2035 
 emissions_diff.sort_values(by='Scenario', inplace=True)
 
 # plot_emission_difference(emissions_diff, "2021",'2021 - 1. Baseline', base_path, False)
+
+'''
