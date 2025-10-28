@@ -100,7 +100,17 @@ pipeline_status_2035 = scenario_pipeline_exclusions_RU(input_excluded_pipelines,
 #plot_map(df_ports_2024, pipelines_2024, pipeline_status_2024, 2024, base_path, False)
 #plot_map(df_ports_2035, pipelines_2035, pipeline_status_2035, 2035, base_path, False)
 
-plot_three_years_subplots(df_ports_2021, pipelines_2021, pipeline_status_2021, df_ports_2024, pipelines_2024, pipeline_status_2024,df_ports_2035, pipelines_2035, pipeline_status_2035,base_path,save=True)
+plot_three_years_subplots(df_ports_2021, pipelines_2021, pipeline_status_2021, 
+                          df_ports_2024, pipelines_2024, pipeline_status_2024,
+                          df_ports_2035, pipelines_2035, pipeline_status_2035,base_path,save=True)
+
+#as 2x2 illustration
+plot_three_years_2x2(
+    df_ports_2021, pipelines_2021, pipeline_status_2021,
+    df_ports_2024, pipelines_2024, pipeline_status_2024,
+    df_ports_2035, pipelines_2035, pipeline_status_2035,
+    base_path, save=True
+)
 
 
 '''

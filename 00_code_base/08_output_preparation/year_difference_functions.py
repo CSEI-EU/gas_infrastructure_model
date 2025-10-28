@@ -264,24 +264,26 @@ def plot_three_years_2x2(df_ports_2021, pipelines_2021, pipeline_status_2021,
                          df_ports_2035, pipelines_2035, pipeline_status_2035,
                          base_path, save=False):
     """
-    Create a 2x2 subplot layout with:
-      - Top row: 2021 and 2024
-      - Bottom-left: 2035
-      - Bottom-right: legend only
+    2x2 layout:
+    - Top row: 2021, 2024
+    - Bottom row: 2035, Legend (symbols + lines)
+    Legend drawn without title, with white background and correct colors/styles.
     """
 
-    # --- Subplot grid setup ---
     fig = make_subplots(
         rows=2, cols=2,
         specs=[[{"type": "scattergeo"}, {"type": "scattergeo"}],
-               [{"type": "scattergeo"}, {"type": "domain"}]],  # bottom-right = legend space
-        subplot_titles=("2021 - Reference Scenario",
-                        "2024 - Realized & Resilience Scenario",
-                        "2035 - Planned Expansion Scenario",
-                        "Legend")
+               [{"type": "scattergeo"}, {"type": "xy"}]],
+        subplot_titles=("Reference Scenario",
+                        "Realized Expension & Alternative Resilience Scenario",
+                        "Planned LNG Expansion Scenario", ""),
+        column_widths=[0.5, 0.5],
+        row_heights=[0.5, 0.5],
+        horizontal_spacing=0.03,
+        vertical_spacing=0.03
     )
 
-    # --- Colors and names ---
+    # --- Colors ---
     color_map_ports = {'old': 'black', 'upgraded': 'blue', 'new': 'green'}
     color_map_pipelines = {
         'included': 'gray',
@@ -296,50 +298,40 @@ def plot_three_years_2x2(df_ports_2021, pipelines_2021, pipeline_status_2021,
         'included_in_wRU_only': 'Only via TurkStream',
     }
 
-    # --- Helper to add data to a subplot ---
-    def add_traces(df_ports, pipelines_df, pipeline_status, row, col,
-                   show_legend_ports=False, show_legend_pipes=False):
-        # LNG Terminals
+    # --- Helper function to add traces ---
+    def add_traces(df_ports, pipelines_df, pipeline_status, row, col):
         for status in ['old', 'upgraded', 'new']:
             ports = df_ports[df_ports['Status'] == status]
             fig.add_trace(go.Scattergeo(
                 lon=ports['Longitude'],
                 lat=ports['Latitude'],
                 mode='markers',
-                marker=dict(size=6, color=color_map_ports[status], symbol='circle'),
-                name=f'LNG Terminal ({status})',
-                showlegend=show_legend_ports
+                marker=dict(size=6, color=color_map_ports[status]),
+                showlegend=False
             ), row=row, col=col)
 
-        # Pipelines
-        legend_shown = set()
-        for _, row_data in pipelines_df.iterrows():
-            edge = row_data['Edge']
+        for _, r in pipelines_df.iterrows():
+            edge = r['Edge']
             status = pipeline_status.get(edge, 'included')
             color = color_map_pipelines.get(status, 'gray')
-
-            show_legend = status not in legend_shown if show_legend_pipes else False
-            legend_shown.add(status)
-
             line_style = dict(width=2, color=color)
             if status == 'included_in_wRU_only':
                 line_style['dash'] = 'dot'
 
             fig.add_trace(go.Scattergeo(
-                lon=[row_data['Source_lon'], row_data['Target_lon']],
-                lat=[row_data['Source_lat'], row_data['Target_lat']],
+                lon=[r['Source_lon'], r['Target_lon']],
+                lat=[r['Source_lat'], r['Target_lat']],
                 mode='lines',
                 line=line_style,
-                name=status_name_map.get(status, 'Included'),
-                showlegend=show_legend
+                showlegend=False
             ), row=row, col=col)
 
-    # --- Add maps to subplots ---
-    add_traces(df_ports_2021, pipelines_2021, pipeline_status_2021, row=1, col=1)
-    add_traces(df_ports_2024, pipelines_2024, pipeline_status_2024, row=1, col=2, show_legend_ports=True, show_legend_pipes=True)
-    add_traces(df_ports_2035, pipelines_2035, pipeline_status_2035, row=2, col=1)
+    # --- Add maps ---
+    add_traces(df_ports_2021, pipelines_2021, pipeline_status_2021, 1, 1)
+    add_traces(df_ports_2024, pipelines_2024, pipeline_status_2024, 1, 2)
+    add_traces(df_ports_2035, pipelines_2035, pipeline_status_2035, 2, 1)
 
-    # --- Configure map appearance ---
+    # --- Configure maps ---
     for geo_id in ['geo', 'geo2', 'geo3']:
         fig.update_layout(**{
             geo_id: dict(
@@ -357,25 +349,92 @@ def plot_three_years_2x2(df_ports_2021, pipelines_2021, pipeline_status_2021,
             )
         })
 
-    # --- Legend layout ---
+    # --- Legend items for bottom-right subplot ---
+    # --- Legend items grouped into two columns ---
+    terminals = [
+        {"type": "marker", "color": "black", "label": "Existing LNG Terminal"},
+        {"type": "marker", "color": "blue", "label": "Expanded LNG Terminal"},
+        {"type": "marker", "color": "green", "label": "New LNG Terminal"},
+    ]
+
+    pipelines = [
+        {"type": "line", "color": "gray", "label": "Included", "dash": "solid"},
+        {"type": "line", "color": "red", "label": "Excluded in all", "dash": "solid"},
+        {"type": "line", "color": "purple", "label": "Norwegian Disruption variation", "dash": "solid"},
+        {"type": "line", "color": "red", "label": "Only via TurkStream variation", "dash": "dot"},
+    ]
+
+    # Fix the axis ranges for the legend subplot
+    fig.update_xaxes(range=[0, 1], row=2, col=2, visible=False, autorange=False)
+    fig.update_yaxes(range=[0, 1], row=2, col=2, visible=False, autorange=False)
+
+    # --- Layout configuration ---
+    marker_size = 10
+    text_size = 14
+    line_half = 0.012      # line length
+    text_offset = 0.05     # text offset (to the right of symbol/line)
+    left_col_center = 0.1
+    right_col_center = 0.5
+
+    # Vertically centered positions
+    y_start = 0.75
+    y_gap = 0.12
+    y_positions = [y_start - i * y_gap for i in range(max(len(terminals), len(pipelines)))]
+
+    # --- Helper for adding a legend entry ---
+    def add_legend_entry(center_x, y, item):
+        if item["type"] == "marker":
+            # Symbol
+            fig.add_trace(go.Scatter(
+                x=[center_x], y=[y],
+                mode="markers",
+                marker=dict(size=marker_size, color=item["color"]),
+                showlegend=False,
+                hoverinfo="skip"
+            ), row=2, col=2)
+        else:
+            # Line
+            fig.add_trace(go.Scatter(
+                x=[center_x - line_half, center_x + line_half], y=[y, y],
+                mode="lines",
+                line=dict(color=item["color"], width=3, dash=item.get("dash", "solid")),
+                showlegend=False,
+                hoverinfo="skip"
+            ), row=2, col=2)
+
+        # Text slightly to the right (same logic as your original)
+        fig.add_trace(go.Scatter(
+            x=[center_x + text_offset], y=[y],
+            text=[item["label"]],
+            mode="text",
+            textfont=dict(size=text_size),
+            showlegend=False,
+            hoverinfo="skip",
+            textposition="middle right"
+        ), row=2, col=2)
+
+    # --- Add both columns ---
+    for item, y in zip(terminals, y_positions[:len(terminals)]):
+        add_legend_entry(left_col_center, y, item)
+
+    for item, y in zip(pipelines, y_positions[:len(pipelines)]):
+        add_legend_entry(right_col_center, y, item)
+
+    fig.update_xaxes(visible=False, row=2, col=2)
+    fig.update_yaxes(visible=False, row=2, col=2)
+
+    # --- Layout adjustments ---
     fig.update_layout(
-        legend=dict(
-            orientation='v',
-            yanchor='middle',
-            y=0.5,
-            xanchor='center',
-            x=0.5,
-            title=None
-        ),
-        width=1600,
-        height=1000,
+        paper_bgcolor='white',   # entire figure background
+        plot_bgcolor='white',    # area behind subplots
+        width=1400,
+        height=1000
     )
 
     # --- Save or show ---
     if save:
         output_path = os.path.join(base_path, "02_plots", "base_map_2x2.png")
-        fig.write_image(output_path, width=1600, height=1000, scale=3)
-        print(f"✅ 2x2 subplot figure saved to: {output_path}")
+        fig.write_image(output_path, width=1400, height=1000, scale=3)
     else:
         fig.show()
 
