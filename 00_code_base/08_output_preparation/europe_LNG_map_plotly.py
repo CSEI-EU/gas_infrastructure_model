@@ -15,8 +15,9 @@ import cartopy.crs as ccrs
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 legend_in_bars = True  # set False if you want the map legend visible
-save_output = False
+save_output = True
 scenarios = ["2021", "2024", "2035 High Demand", "2035 Low Demand"]
+map_title = "Cons"
 
 # base_path = r"C:\Users\jfg.eco\Documents\hydrogen_grid"
 base_path = r"C:\Users\mar.eco\OneDrive - CBS - Copenhagen Business School\Desktop\hydrogen_grid"
@@ -262,7 +263,7 @@ fig.write_image(output_svg_name, format="svg")
 map_img = mpimg.imread("europe_map_background.png")
 img_height, img_width, _ = map_img.shape
 
-fig, ax = plt.subplots(figsize=(img_width/100, img_height/100))
+fig, ax = plt.subplots(figsize=(img_width/80, img_height/80))
 ax.imshow(map_img)  # default origin='upper'
 ax.axis("off")
 
@@ -291,7 +292,7 @@ manual_offsets = {
     "DEU": (0, 20),       
     "IRL": (5, 0),         
     "DNK": (0, 5),         
-    "NOR": (20, 0),        
+    "NOR": (10, 5),        
     "FIN": (-20, 10),     
     "EST": (-5, 20),       
     "LVA": (-5, 20),    
@@ -400,8 +401,8 @@ axins.set_frame_on(False)  # hide inset frame
 plt.show()
 
 # Save the figure to files
-output_png_path = os.path.join(output_path, "europe_map_with_bars.png")
-output_svg_path = os.path.join(output_path, "europe_map_with_bars.svg")
+output_png_path = os.path.join(output_path, f"europe_map_with_bars_{map_title}.png")
+output_svg_path = os.path.join(output_path, f"europe_map_with_bars_{map_title}.svg")
 
-fig.savefig(output_png_path, dpi=900, bbox_inches='tight')
-fig.savefig(output_svg_path, format='svg', bbox_inches='tight')
+fig.savefig(output_png_path, dpi=900, bbox_inches='tight', pad_inches=0)
+fig.savefig(output_svg_path, format='svg', bbox_inches='tight', pad_inches=0)
