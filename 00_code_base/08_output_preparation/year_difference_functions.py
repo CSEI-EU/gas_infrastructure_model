@@ -125,9 +125,26 @@ def plot_map(df_ports, pipelines_df, pipeline_status, year, base_path, save):
         if status == 'included_in_wRU_only':
             line_style['dash'] = 'dot'
 
+        start_lon = row['Source_lon']
+        start_lat = row['Source_lat']
+        end_lon = row['Target_lon']
+        end_lat = row['Target_lat']
+
+        if ('RU' in edge or 'Russia' in edge) and ('DE' in edge or 'Germany' in edge):
+
+            mid_lon = (start_lon + end_lon) / 2
+            mid_lat = max(start_lat, end_lat) + 4   # push north into Baltic Sea
+
+            lons = [start_lon, mid_lon, end_lon]
+            lats = [start_lat, mid_lat, end_lat]
+
+        else:
+            lons = [start_lon, end_lon]
+            lats = [start_lat, end_lat]
+
         fig.add_trace(go.Scattergeo(
-            lon=[row['Source_lon'], row['Target_lon']],
-            lat=[row['Source_lat'], row['Target_lat']],
+            lon=lons,
+            lat=lats,
             mode='lines',
             line=line_style,
             name=status_name_map.get(status, 'Included'),
