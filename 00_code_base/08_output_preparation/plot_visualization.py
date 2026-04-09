@@ -247,24 +247,67 @@ global_max_2024 = 10500
 
 # plot_cost_map(input_file_cost, scenario, base_path, json_file_path, True)
 plot_cost_difference(file_cost_difference_2024, full_name, scenario, base_path, global_min_2024, global_max_2024, json_file_path, True)
-
+'''
 # ---------------------------------------------------------------------
 data_path_emissions = os.path.join(base_path, "01_data", "02_output_data", "02_unidirectional_results", "01_paper_IAEE", "02_prepared_results")
 input_file_emissions= os.path.join(data_path_emissions, "emission_differences.xlsx")
 
 emissions_diff = pd.read_excel(input_file_emissions)
-emissions_diff.loc[emissions_diff['Scenario'] == '2021', 'Scenario'] = '2021 - 1. Baseline'
-emissions_diff.loc[emissions_diff['Scenario'] == '2024', 'Scenario'] = '2024 - 2. No Russian imports'
-emissions_diff.loc[emissions_diff['Scenario'] == '2024_inv', 'Scenario'] = '2024 - 3. No Russian imports with investments'
-emissions_diff.loc[emissions_diff['Scenario'] == '2024_no_QA', 'Scenario'] = '2024 - 2.2. No Qatari imports'
-emissions_diff.loc[emissions_diff['Scenario'] == '2024_NO_red', 'Scenario'] = '2024 - 2.3. Reduced Norwegian pipeline exports'
-emissions_diff.loc[emissions_diff['Scenario'] == '2024_no_USA', 'Scenario'] = '2024 - 2.1. NO US imports'
-emissions_diff.loc[emissions_diff['Scenario'] == '2024_with_RU', 'Scenario'] = '2024 - 2.4. Limited Russian imports'
-emissions_diff.loc[emissions_diff['Scenario'] == '2035_SP', 'Scenario'] = '2035 - 4.1. IEA - SP'
-emissions_diff.loc[emissions_diff['Scenario'] == '2035_AP', 'Scenario'] = '2035 - 4.2. IEA - AP'  
+emissions_diff.loc[emissions_diff['Scenario'] == '2021', 'Scenario'] = 'REF'
+emissions_diff.loc[emissions_diff['Scenario'] == '2024', 'Scenario'] = 'REX'
+emissions_diff.loc[emissions_diff['Scenario'] == '2024_no_USA', 'Scenario'] = 'REX - US variation'
+emissions_diff.loc[emissions_diff['Scenario'] == '2024_no_QA', 'Scenario'] = 'REX - Qatari variation'
+emissions_diff.loc[emissions_diff['Scenario'] == '2024_NO_red', 'Scenario'] = 'REX - Norwegian variation'
+emissions_diff.loc[emissions_diff['Scenario'] == '2024_with_RU', 'Scenario'] = 'REX - Russian variation'
+emissions_diff.loc[emissions_diff['Scenario'] == '2024_inv', 'Scenario'] = 'AR'
+emissions_diff.loc[emissions_diff['Scenario'] == '2035_SP', 'Scenario'] = 'PLE - SP variation'
+emissions_diff.loc[emissions_diff['Scenario'] == '2035_AP', 'Scenario'] = 'PLE - AP variation'
+#emissions_diff.sort_values(by='Scenario', inplace=True)
 
-emissions_diff.sort_values(by='Scenario', inplace=True)
+order = ['REF', 'REX', 'REX - US variation', 'REX - Qatari variation',
+         'REX - Norwegian variation', 'REX - Russian variation', 'AR',
+         'PLE - SP variation', 'PLE - AP variation']
 
-# plot_emission_difference(emissions_diff, "2021",'2021 - 1. Baseline', base_path, False)
+emissions_diff['Scenario'] = pd.Categorical(emissions_diff['Scenario'], categories=order, ordered=True)
 
-'''
+plot_emission_difference(emissions_diff, "2021",'REF', base_path, False)
+
+
+def plot_emission_difference(emissions_df, base_year, base_scenario, path, save):
+    emissions_df['Emissions_Diff_to_'+base_year] = (
+        emissions_df['Total_Emissions'] -
+        emissions_df.loc[emissions_df['Scenario'] == base_scenario, 'Total_Emissions'].values[0]
+    )
+    emissions_df['Color'] = 'royalblue'
+
+    fig_emissions = px.bar(
+        emissions_df,
+        x='Scenario',
+        y='Emissions_Diff_to_'+base_year,
+        category_orders={'Scenario': order},  # 👈 enforce order
+        labels={'Emissions_Diff_to_'+base_year: 'Emissions Difference to the Reference Scenario in t'},
+        text='Emissions_Diff_to_'+base_year,
+        color='Color',
+        color_discrete_map="identity"
+    )
+
+    fig_emissions.update_traces(
+        texttemplate='%{text:.1f}M',
+        textposition='outside',
+        text=emissions_df['Emissions_Diff_to_'+base_year].apply(lambda x: round(x/1e6, 1))
+    )
+
+    fig_emissions.update_layout(
+        uniformtext_minsize=8,
+        uniformtext_mode='hide',
+        width=1100,
+        height=650,
+        margin=dict(l=60, r=60, t=60, b=60),
+        legend=dict(x=1.02, y=1, xanchor='left', yanchor='top')
+    )
+
+    fig_emissions.show()
+
+    if save:
+        output_file = os.path.join(path, "02_plots", "Flow_Results", f"emission_difference_{base_year}.png")
+        fig_emissions.write_image(output_file, width=1100, height=650, scale=2)
