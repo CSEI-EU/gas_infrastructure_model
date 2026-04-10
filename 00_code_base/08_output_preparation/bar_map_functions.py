@@ -1,3 +1,4 @@
+from logging import config
 import os
 import geopandas as gpd
 import pandas as pd
@@ -42,7 +43,7 @@ def map_config(data_gas_prod, scenarios):
         "global_max_raw": global_max_raw,
         "global_max_sqrt": global_max_sqrt,
 
-        "bar_height_scale": 0,
+        "bar_height_scale": 28,
         "bar_spacing": 3,
         "bar_colors": ["#4f81bd", "#2ca02c", "#ca2e2e"],
 
@@ -125,9 +126,13 @@ def build_plotly_map(data_gas_prod, world_df, ports_df, region_to_countries, hig
                                         else None)))
 
 
+
     for val in config["scale_vals"]:
-        fig.add_trace(go.Scattergeo(lon=[config["scale_lon"], config["scale_lon"]], lat=[config["scale_lat"], config["scale_lat"]] + np.sqrt(val)/config["global_max_sqrt"]*config["bar_height_scale"], mode="lines", line=dict(color="darkgrey", width=8), showlegend=False))
-        fig.add_trace(go.Scattergeo(lon=[config["scale_lon"] - 15], lat=[config["scale_lat"] + np.sqrt(val)/config["global_max_sqrt"]*config["bar_height_scale"]], mode="text",text=[f"{human_readable(val)} GWh/a"], showlegend=False, textfont=dict(size=10)))
+        lat0 = config["scale_lat"]
+        lat1 = config["scale_lat"] + (np.sqrt(val) / config["global_max_sqrt"]) * config["bar_height_scale"]
+
+        fig.add_trace(go.Scattergeo(lon=[config["scale_lon"], config["scale_lon"]], lat=[lat0, lat1], mode="lines", line=dict(color="darkgrey", width=8), showlegend=False))
+        fig.add_trace(go.Scattergeo(lon=[config["scale_lon"] - 15], lat=[lat1], mode="text",text=[f"{human_readable(val)} GWh/a"], showlegend=False, textfont=dict(size=10)))
         
 
     for region_name, color in config["pastel_colors"].items():
