@@ -79,6 +79,7 @@ for region, isos in region_to_countries.items():
     color = pastel_colors.get(region, "#cccccc")
     for iso in isos:
         iso_to_color[iso] = color
+
 for iso in region_to_countries["Africa"]:  # force all Africa to be green
     iso_to_color[iso] = pastel_colors["Africa"]
 
@@ -218,6 +219,15 @@ for region_name, color in pastel_colors.items():
         name=label
     ))
 
+fig.add_trace(go.Scattergeo(
+    lon=[None],
+    lat=[None],
+    mode="lines",
+    line=dict(color="black", width=1),
+    name="Model nodes (outlined countries)",
+    showlegend=True
+))
+
 
 # Similar layout to previous maps
 fig.update_geos(
@@ -235,19 +245,17 @@ fig.update_layout(
     width=1130,
     margin={"r": 0, "t": 0, "l": 0, "b": 0},
     legend=dict(
-        orientation="h",        
-        yanchor="bottom",
-        y=0.15,                  
-        xanchor="left",
-        x=0.02,                 
-        itemsizing="constant",
-        traceorder="normal",
-        font=dict(size=12),
-        #bgcolor="rgba(255,255,255,0.85)",  
-        bordercolor="lightgrey",
-        borderwidth=1,
-    )
-)
+    orientation="h",
+    yanchor="bottom",
+    y=0.16,
+    xanchor="center",
+    x=0.5,
+    font=dict(size=10),        # smaller font
+    itemwidth=30,              # tighter spacing
+    itemsizing="constant",
+    bordercolor="lightgrey",
+    borderwidth=1)
+)  
 
 # Show or save
 if save_output:

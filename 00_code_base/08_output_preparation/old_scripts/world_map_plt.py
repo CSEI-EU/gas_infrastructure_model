@@ -97,7 +97,7 @@ region_to_countries["Oceania"] = ["AUS", "NZL"]
 
 # Build the map
 fig, ax = plt.subplots(figsize=(20, 10))
-world.plot(ax=ax, color="white", edgecolor="grey", linewidth=0.5)
+world.plot(ax=ax, color="#c5c5c5", edgecolor="grey", linewidth=0.5)
 world.loc[world["ISO_A3"] == "ERI", "CONTINENT"] = "Africa"
 
 # Regions with data in the excel
@@ -242,12 +242,20 @@ for region_name in specific_regions:
         zorder=5
     )
 
+#from matplotlib.patches import Rectangle
+#rect = Rectangle((-10, 35), 50,  35, linewidth=2, edgecolor='black', facecolor='none')
+#ax.add_patch(rect)
+
 # Create two legends, one for bar colors and one for bar heights
 legend_scenarios = [
     Patch(facecolor="#4f81bd", label="Reference Scenario"),
     Patch(facecolor="#2ca02c", label="Realized Expansion and Alternative resilience scenario"),
     Patch(facecolor="#ca2e2e", label="Planned LNG Expansion Scenario with the Ap and SP variation"),
 ]
+
+# Fix LNG legend on the map
+legend_ports = [Line2D([0], [0], marker='o', color='w', label='LNG Ports', markerfacecolor='black', markersize=6)]
+legend_outline = [Line2D([0], [0], color="black", lw=1.2, label="Outlined countries: individual model nodes")]
 
 # Add Oceania label especially 
 legend_regions = []
@@ -258,25 +266,19 @@ for r in specific_regions:
     legend_regions.append(
     Line2D([0],[0], marker='o', color='w', markerfacecolor=pastel_colors[r], markeredgecolor='grey', markersize=10, label=label))
 
+spacer = Line2D([], [], linestyle="none", label="")
 
-# Fix LNG legend on the map
-legend_ports = [Line2D([0], [0], marker='o', color='w', label='LNG Ports',
-                        markerfacecolor='black', markersize=6)]
-
-legend_outline = [Line2D([0], [0], color="black", lw=1.2, label="Outlined countries = individual model nodes")]
-all_handles = legend_scenarios + legend_regions + legend_ports + legend_outline
-
+all_handles = (
+    legend_ports +
+    legend_scenarios +
+    legend_regions +
+    legend_outline
+)
 leg = ax.legend(handles = all_handles, loc="upper center", bbox_to_anchor=(0.5, 0.05), ncol=4,frameon=True,)
 ax.add_artist(leg)
 
 # Scale the bar height 
-axins = inset_axes(
-    ax, width="2%", height="25%",
-    loc="lower left",
-    bbox_to_anchor=(0.1, 0.1, 1, 1),  
-    bbox_transform=ax.transAxes,
-    borderpad=0
-)
+axins = inset_axes(ax, width="2%", height="25%", loc="lower left", bbox_to_anchor=(0.1, 0.1, 1, 1), bbox_transform=ax.transAxes)
 
 tick_vals = np.linspace(0, scale_factor, 5)
 

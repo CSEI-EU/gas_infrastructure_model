@@ -133,7 +133,7 @@ def plot_map(df_ports, pipelines_df, pipeline_status, year, base_path, save):
         if ('RU' in edge or 'Russia' in edge) and ('DE' in edge or 'Germany' in edge):
 
             mid_lon = (start_lon + end_lon) / 2
-            mid_lat = max(start_lat, end_lat) + 4   # push north into Baltic Sea
+            mid_lat = max(start_lat, end_lat) + 5  # push north 
 
             lons = [start_lon, mid_lon, end_lon]
             lats = [start_lat, mid_lat, end_lat]
