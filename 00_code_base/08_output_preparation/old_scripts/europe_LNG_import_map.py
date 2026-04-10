@@ -9,7 +9,7 @@ from shapely.geometry import MultiPolygon
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 # Change parameters for output
-save_output = True
+save_output = False
 scenarios = ["2021", "2024", "2035 High Demand", "2035 Low Demand"]  
 
 # Input data

@@ -15,7 +15,7 @@ import cartopy.crs as ccrs
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 legend_in_bars = True  # set False if you want the map legend visible
-save_output = True
+save_output = False
 scenarios = ["2021", "2024", "2035 High Demand", "2035 Low Demand"]
 map_title = "Cons"
 

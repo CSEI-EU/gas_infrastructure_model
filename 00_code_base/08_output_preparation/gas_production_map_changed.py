@@ -6,21 +6,19 @@ import numpy as np
 from matplotlib.patches import Patch
 import requests
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+from matplotlib.lines import Line2D
 
 # Change parameters for output 
-save_output = False
+save_output = True
+title_output  = "world_map_cons.png"
 scenarios = ["2021", "2024", "2035 High Demand"] #, "2035 Low Demand"] 
 
-base_path = r"C:\Users\jfg.eco\Documents\hydrogen_grid"
-
 # Input data
-input_file_path = os.path.join(base_path, '01_data', '01_input_data', '02_processed', '01_paper_IAEE', '01_data_sheets_input')
-input_file = '\\paper_paris_2025_input_production_world.xlsx'
-full_input_path = os.path.abspath(os.path.join(os.getcwd(), input_file_path + input_file))
+full_input_path = os.path.join('01_data', '01_input_data', '02_processed', '01_paper_IAEE', '01_data_sheets_input', 'paper_paris_2025_input_consumption_world.xlsx')
 data_gas_prod = pd.read_excel(full_input_path)
 
 # LNG port locations 
-LNG_location_path = os.path.join(base_path, '01_data', '01_input_data', '01_raw', '01_Russian_War_Case')
+LNG_location_path = os.path.join('01_data', '01_input_data', '01_raw', '01_Russian_War_Case')
 LNG_file = '\\LNG_locations.xlsx'
 full_LNG_path = os.path.abspath(os.path.join(LNG_location_path + LNG_file))
 ports_df = pd.read_excel(full_LNG_path, sheet_name="Global")
@@ -33,13 +31,13 @@ ports_df['Longitude'] = ports_df['Longitude'].astype(str).str.replace(',', '.').
 output_path = os.path.join('02_plots')
 
 # World shapefile
-shapefile_path = os.path.join(base_path, '01_data', '01_input_data', '01_raw', 'world_countries_shapefile')
+shapefile_path = os.path.join('01_data', '01_input_data', '01_raw', 'world_countries_shapefile')
 shapefile = '\\ne_50m_admin_0_countries_lakes.shp'
 full_shapefile_path = os.path.abspath(os.path.join(os.getcwd(), shapefile_path + shapefile))
 
 # Fix Crimea handling (attach to Ukraine instead or Russia)
 ukraine_json_url = "https://geodata.ucdavis.edu/gadm/gadm4.1/json/gadm41_UKR_0.json"
-ukraine_json_path = os.path.join(base_path, "00_code_base", "08_output_preparation", "gadm41_UKR_0.json")
+ukraine_json_path = os.path.join('00_code_base', '08_output_preparation', 'gadm41_UKR_0.json')
 response = requests.get(ukraine_json_url)
 with open(ukraine_json_path, "wb") as f:
     f.write(response.content)
@@ -232,12 +230,12 @@ for region_name in specific_regions:
     vals_sqrt = np.sqrt(vals)
     vals_scaled = vals_sqrt / global_max_sqrt * scale_factor
 
-    width = 1.2
+    width = 2.5
     bar_positions = np.arange(len(vals)) * width
     ax.bar(
         x + bar_positions - width*1.5,
         vals_scaled,
-        width=0.97,
+        width=2.2,
         bottom=y,
         color= ["#4f81bd", "#2ca02c", "#ca2e2e"],
         align='center',
@@ -257,29 +255,25 @@ for r in specific_regions:
     label = r
     if r == "Australia":  
         label = "Oceania"
-    legend_regions.append(Patch(facecolor=pastel_colors[r], edgecolor="grey", label=label))
+    legend_regions.append(
+    Line2D([0],[0], marker='o', color='w', markerfacecolor=pastel_colors[r], markeredgecolor='grey', markersize=10, label=label))
+
 
 # Fix LNG legend on the map
-from matplotlib.lines import Line2D
 legend_ports = [Line2D([0], [0], marker='o', color='w', label='LNG Ports',
                         markerfacecolor='black', markersize=6)]
-all_handles = legend_scenarios + legend_regions + legend_ports
 
-leg = ax.legend(
-    handles=all_handles,
-    loc="lower left",
-    bbox_to_anchor=(0.0, -0.15),
-    ncol=2,
-    frameon=True,
-    title="Legend: Regions are modelled as a single node for the outlined parts"
-)
+legend_outline = [Line2D([0], [0], color="black", lw=1.2, label="Outlined countries = individual model nodes")]
+all_handles = legend_scenarios + legend_regions + legend_ports + legend_outline
+
+leg = ax.legend(handles = all_handles, loc="upper center", bbox_to_anchor=(0.5, 0.05), ncol=4,frameon=True,)
 ax.add_artist(leg)
 
 # Scale the bar height 
 axins = inset_axes(
     ax, width="2%", height="25%",
     loc="lower left",
-    bbox_to_anchor=(0.1, 0.2, 1, 1),  
+    bbox_to_anchor=(0.1, 0.1, 1, 1),  
     bbox_transform=ax.transAxes,
     borderpad=0
 )
@@ -315,4 +309,4 @@ plt.show()
 # Save output
 if save_output:
     os.makedirs(output_path, exist_ok=True)
-    fig.savefig(os.path.join(output_path, "world_map_bar.png"), dpi=300)
+    fig.savefig(os.path.join(output_path, title_output), dpi=300)
