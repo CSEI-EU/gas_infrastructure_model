@@ -338,7 +338,7 @@ def plot_flow_map(df, ports, imports, lng_import_coords):
  
     for _, row in df_pipelines.iterrows():
         line_color = 'gray' if row.get('Excluded', False) else flow_color(row['Share'])
-        line_width = max(row['Flow'] / 100000, 1.1) if row['Flow'] > 0 else 1
+        line_width = max(row['Capacity_tot'] / 100000, 1.1) if row['Flow'] > 0 else 1
 
         start_lon = row['Source_lon']
         start_lat = row['Source_lat']
@@ -381,6 +381,7 @@ def plot_flow_map(df, ports, imports, lng_import_coords):
         line=dict(width=2, color='gray'),
         name='Not included'
     ))
+
  
     # Add LNG import points
     for country, (lat, lon) in lng_import_coords.items():
@@ -427,6 +428,15 @@ def plot_flow_map(df, ports, imports, lng_import_coords):
     fig.add_trace(go.Scattergeo(lon=[None], lat=[None], mode='markers',
         marker=dict(size=20, color='rgba(0,0,0,0)', symbol='circle', line=dict(width=0.5, color='black')),
         name='High capacity', showlegend=True))
+
+
+    fig.add_trace(go.Scattergeo(
+    lon=[None],
+    lat=[None],
+    mode='lines',
+    line=dict(width=0.1, color='rgba(0,0,0,0)'),  # invisible
+    name='Width ∝ capacity',
+    showlegend=True))
  
  
     # Add color bar to the legend
@@ -455,7 +465,7 @@ def plot_flow_map(df, ports, imports, lng_import_coords):
                 thicknessmode = 'pixels',
                 thickness = 10,
                 x=0.964,  
-                y=0.773,  
+                y=0.735,  
                 xanchor='right',
                 yanchor='top',
                 bgcolor='rgba(255, 255, 255, 0.8)',
@@ -468,7 +478,8 @@ def plot_flow_map(df, ports, imports, lng_import_coords):
         ),
     showlegend=False,
     ))
- 
+
+
     fig.update_layout(
         #title=title,
         geo=dict(
@@ -602,7 +613,6 @@ def plot_cost_difference(input_difference, full_scenario_name, scenario, output_
     with open(geojson_path, 'r', encoding='utf-8') as f:
         custom_geojson = json.load(f) 
 
-
     df = pd.read_excel(input_difference, sheet_name="Summary_Total_Cost")
     df.columns = df.columns.str.strip()
 
@@ -611,15 +621,6 @@ def plot_cost_difference(input_difference, full_scenario_name, scenario, output_
 
     df_ukraine = df[df["Node_ISO3"] == "UKR"]
     df_rest = df[df["Node_ISO3"] != "UKR"]
-
-    '''
-    z = df[full_scenario_name]
-    color_range = [z.min(), z.max()]
-    #color_range = [-13000, 7000]
-
-    # Percentage for plotting 
-    percent_scale = z / z.abs().max() * 100
-    ]'''
     
     color_range = [global_min, global_max]
     global_abs_max = max(abs(global_min), abs(global_max))
@@ -632,11 +633,7 @@ def plot_cost_difference(input_difference, full_scenario_name, scenario, output_
     colorscale = [
     [0.0, 'rgb(0, 128, 0)'],      
     [middle_colorbar_normalized, 'rgb(255, 255, 255)'],  
-    [1.0, 'rgb(255, 0, 0)'],      
-    ]
-
-    print(df[df["Node_ISO3"] == "TUR"])
-    print(convert_to_alpha3('TR'))
+    [1.0, 'rgb(255, 0, 0)']]
 
     fig = go.Figure()
 
@@ -696,59 +693,11 @@ def plot_cost_difference(input_difference, full_scenario_name, scenario, output_
         height=650
     )
 
-
-    
-
-    '''fig = go.Figure(data=go.Choropleth(
-
-        locations=df["Node_ISO3"],
-        z=z,
-        geojson=custom_geojson,  
-        featureidkey='properties.GID_0',
-        colorscale=colorscale,
-        zmin=color_range[0],
-        zmax=color_range[1],
-        marker_line_color='rgb(180, 200, 230)',  # country borders
-        marker_line_width=0.5,
-        colorbar=dict(
-            title="Cost difference (€)",
-            titlefont=dict(size=14),
-            tickfont=dict(size=12),
-            len=0.6,
-            y=0.5
-        ),
-        # geo='geo',
-    ))
-
-
-    fig.update_layout(
-        # title not shown
-        geo=dict(
-            fitbounds="locations",
-            visible=True,
-
-            #scope='world',
-            #projection_type='natural earth',
-            showland=True,
-            landcolor='rgb(220, 230, 250)',
-            showcountries=True,
-            countrycolor='rgb(180, 200, 230)',
-            showcoastlines=True,
-            coastlinecolor='rgb(160, 180, 220)',
-            center=dict(lat=50, lon=20),
-            lataxis=dict(range=[30, 65]),
-            lonaxis=dict(range=[-20, 40]),
-        ),
-        margin={"r": 0, "t": 0, "l": 0, "b": 0},
-        width=900,
-        height=650
-    )'''
-
     if save:
         fig.write_image(output_file, width=900, height=650, scale=3)
+        fig.show()
     else:
         fig.show()
-
 
 
 
@@ -825,219 +774,3 @@ def plot_emission_difference(emissions_df,base_year,base_scenario, path, save):
     if save:
         output_file = os.path.join(path, "02_plots", "Flow_Results", f"emission_difference_{base_year}.png")
         fig_emissions.write_image(output_file, width=1135, height=800, scale=2)
-
-# Old code with normal red to blue colors 
-'''def flow_color(share):
-    if share <= 0.0:
-        return 'rgba(0, 255, 0, 0.8)'  # Green
-    elif share >= 1.0:
-        return 'rgba(255, 0, 0, 0.8)'  # Red
-
-    if share < 0.5:
-        # Green to Yellow
-        ratio = share / 0.5
-        r = int(255 * ratio)
-        g = 255
-        b = 0
-    else:
-        # Yellow to Red
-        ratio = (share - 0.5) / 0.5
-        r = 255
-        g = int(255 * (1 - ratio))
-        b = 0
-
-    return f'rgba({r}, {g}, {b}, 0.7)'
-
-    
-# Final plot of the map
-def plot_flow_map(df, ports, imports, title):
-    fig = go.Figure()
- 
-    # First plot the pipeline flows
-    df_pipelines = df[(df['FromType'] == '-') & (df['ToType'] == '-')]
- 
-    for _, row in df_pipelines.iterrows():
-        line_color = flow_color(row['Share'])
-        line_width = max(row['Flow'] / 100000, 1.1) if row['Flow'] > 0 else 1
- 
-        fig.add_trace(go.Scattergeo(
-            locationmode='country names',
-            lon=[row['Source_lon'], row['Target_lon']],
-            lat=[row['Source_lat'], row['Target_lat']],
-            mode='lines',
-            line=dict(
-                width=line_width,
-                color=line_color,
-            ),
-            hoverinfo='skip',
-            showlegend=False,  # Do not show in legend
-        ))
- 
-    # Port names
-    fig.add_trace(go.Scattergeo(
-        locationmode='country names',
-        lon=ports['Longitude'],
-        lat=ports['Latitude'],
-        mode='markers',
-        marker=dict(
-            size=5,  # Small size
-            color='black',
-            symbol='circle',
-        ),
-        #hoverinfo='skip',
-        name='LNG terminal',
-        showlegend=True,
-    ))
- 
-    # Add LNG import points
-    for country, (lat, lon) in LNG_IMPORT_COORDS.items():
-        share_import = imports[imports['From']== country]['Share'].values
-        capacity_import = imports[imports['From']== country]['Capacity_tot'].values
- 
-        # Condition, otherwise it does not work
-        if len(capacity_import) > 0:
-            capacity_import = capacity_import[0]  
-        else:
-            capacity_import = 0
- 
-        if len(share_import) > 0:
-            share_import = share_import[0]  
-        else:
-            share_import = 0
- 
-        color = flow_color(share_import)
-        size = max(10, 0.00005*capacity_import)
- 
-        fig.add_trace(go.Scattergeo(
-            lon=[lon],
-            lat=[lat],
-            mode='markers',
-            marker=dict(
-                size=size,  
-                color=color ,  
-                symbol='circle',
-                line=dict(width=0.5, color='black')
-            ),
-            hoverinfo='skip',
-            showlegend=False
-        ))
- 
-    # Size reference for small, medium, large
-    small_size = 5
-    medium_size = 10
-    large_size = 20
- 
-    fig.add_trace(go.Scattergeo(
-        lon=[None],
-        lat=[None],
-        mode='markers',
-        marker=dict(
-            size=small_size,
-            color='rgba(0,0,0,0)',
-            symbol='circle',
-            line=dict(width=0.5, color='black')
-        ),
-        name='Low capacity',
-        showlegend=True
-    ))
- 
-    fig.add_trace(go.Scattergeo(
-        lon=[None],
-        lat=[None],
-        mode='markers',
-        marker=dict(
-            size=medium_size,
-            color='rgba(0,0,0,0)',
-            symbol='circle',
-            line=dict(width=0.5, color='black')
-        ),
-        name='Medium capacity',
-        showlegend=True
-    ))
- 
-    fig.add_trace(go.Scattergeo(
-        lon=[None],
-        lat=[None],
-        mode='markers',
-        marker=dict(
-            size=large_size,
-            color='rgba(0,0,0,0)',
-            symbol='circle',
-            line=dict(width=0.5, color='black')
-        ),
-        name='High capacity',
-        showlegend=True
-    ))
- 
- 
-    # Add color bar to the legend
-    colorscale = [
-        [0.0, "rgb(0,255,0)"],      # Green
-        [0.5, "rgb(255,255,0)"],    # Yellow
-        [1.0, "rgb(255,0,0)"]       # Red
-    ]
- 
-    fig.add_trace(go.Scattergeo(
-        lon=[None], lat=[None],  # no real data
-        mode='markers',
-        marker=dict(
-            colorscale=colorscale,
-            cmin=0,
-            cmax=1,
-            colorbar=dict(
-                title="Utilization",
-                titleside="top",
-                tickmode="array",
-                orientation = 'h',
-                tickvals=[0, 1],
-                ticktext=["Low", "High"],
-                len=0.199,
-                xpad = 0,
-                thicknessmode = 'pixels',
-                thickness = 10,
-                x=0.964,  
-                y=0.813,  
-                xanchor='right',
-                yanchor='top',
-                bgcolor='rgba(255, 255, 255, 0.8)',
-                bordercolor='rgba(0, 0, 0, 0.8)',
-                borderwidth=1,
-            ),
-            showscale=True,
-            color=[0.5],  
-            size=0.01,    
-        ),
-    showlegend=False,
-    ))
- 
- 
-    fig.update_layout(
-        title=title,
-        geo=dict(
-            scope='world',  # full world, but we control view
-            projection_type='natural earth',
-            showland=True,
-            landcolor='rgb(220, 230, 250)',
-            showcountries=True,                 # Shows borders even internal
-            countrycolor='rgb(180, 200, 230)',
-            showcoastlines=True,
-            coastlinecolor='rgb(160, 180, 220)',
-            center=dict(lat=50, lon=20),  # Europe-focused
-            lataxis=dict(range=[30, 65]),  # N Africa to N Europe
-            lonaxis=dict(range=[-20, 40]), # W Europe to Central Asia
-        ),
-        width=900,
-        height=650,
-        legend=dict(
-            x=0.965,  
-            y=1.0,
-            xanchor='right',
-            yanchor='top',
-            bgcolor='rgba(255, 255, 255, 0.8)',
-            bordercolor='rgba(0, 0, 0, 0.8)',
-            borderwidth=1,
-        )
-    )
- 
-    fig.show()   
-'''
