@@ -311,3 +311,44 @@ def plot_emission_difference(emissions_df, base_year, base_scenario, path, save)
     if save:
         output_file = os.path.join(path, "02_plots", "Flow_Results", f"emission_difference_{base_year}.png")
         fig_emissions.write_image(output_file, width=1100, height=650, scale=2)
+
+
+
+def plot_emission_difference(emissions_df, base_year, base_scenario, output_path, save):
+    emissions_df['Emissions_Diff_to_'+base_year] = (
+        emissions_df['Total_Emissions'] -
+        emissions_df.loc[emissions_df['Scenario'] == base_scenario, 'Total_Emissions'].values[0]
+    )
+    emissions_df['Color'] = 'royalblue'
+
+    fig_emissions = px.bar(
+        emissions_df,
+        x='Scenario',
+        y='Emissions_Diff_to_'+base_year,
+        category_orders={'Scenario': order}, 
+        labels={'Emissions_Diff_to_'+base_year: 'Emissions Difference to the Reference Scenario in t'},
+        text='Emissions_Diff_to_'+base_year,
+        color='Color',
+        color_discrete_map="identity"
+    )
+
+    fig_emissions.update_traces(
+        texttemplate='%{text:.1f}M',
+        textposition='outside',
+        text=emissions_df['Emissions_Diff_to_'+base_year].apply(lambda x: round(x/1e6, 1))
+    )
+
+    fig_emissions.update_layout(
+        uniformtext_minsize=8,
+        uniformtext_mode='hide',
+        width=1100,
+        height=650,
+        margin=dict(l=60, r=60, t=60, b=60),
+        legend=dict(x=1.02, y=1, xanchor='left', yanchor='top')
+    )
+
+    fig_emissions.show()
+
+    if save:
+        output_file = os.path.join(output_path, "Flow_Results", f"emission_difference_{base_year}.png")
+        fig_emissions.write_image(output_file, width=1100, height=650, scale=2)
