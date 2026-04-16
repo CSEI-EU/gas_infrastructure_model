@@ -338,21 +338,26 @@ def plot_flow_map(df, ports, imports, lng_import_coords):
  
     for _, row in df_pipelines.iterrows():
         line_color = 'gray' if row.get('Excluded', False) else flow_color(row['Share'])
-
         line_width = max(row['Flow'] / 100000, 1.1) if row['Flow'] > 0 else 1
+
+        start_lon = row['Source_lon']
+        start_lat = row['Source_lat']
+        end_lon = row['Target_lon']
+        end_lat = row['Target_lat']
+        edge = row.get("Edge", "")
+
+        if ('RU' in edge or 'Russia' in edge) and ('DE' in edge or 'Germany' in edge):
+            mid_lon = (start_lon + end_lon) / 2
+            mid_lat = max(start_lat, end_lat) + 5
+
+            lons = [start_lon, mid_lon, end_lon]
+            lats = [start_lat, mid_lat, end_lat]
+        else:
+            lons = [start_lon, end_lon]
+            lats = [start_lat, end_lat]
  
-        fig.add_trace(go.Scattergeo(
-            locationmode='country names',
-            lon=[row['Source_lon'], row['Target_lon']],
-            lat=[row['Source_lat'], row['Target_lat']],
-            mode='lines',
-            line=dict(
-                width=line_width,
-                color=line_color,
-            ),
-            hoverinfo='skip',
-            showlegend=False,  # Do not show in legend
-        ))
+        fig.add_trace(go.Scattergeo(locationmode='country names', lon=lons, lat=lats, mode='lines',
+            line=dict(width=line_width, color=line_color,), hoverinfo='skip',showlegend=False))
  
     # Port names
     fig.add_trace(go.Scattergeo(
@@ -365,7 +370,6 @@ def plot_flow_map(df, ports, imports, lng_import_coords):
             color='black',
             symbol='circle',
         ),
-        #hoverinfo='skip',
         name='LNG terminal',
         showlegend=True,
     ))
@@ -412,55 +416,23 @@ def plot_flow_map(df, ports, imports, lng_import_coords):
         ))
  
     # Size legend for small, medium, large
-    fig.add_trace(go.Scattergeo(
-        lon=[None],
-        lat=[None],
-        mode='markers',
-        marker=dict(
-            size=5,
-            color='rgba(0,0,0,0)',
-            symbol='circle',
-            line=dict(width=0.5, color='black')
-        ),
-        name='Low capacity',
-        showlegend=True
-    ))
- 
-    fig.add_trace(go.Scattergeo(
-        lon=[None],
-        lat=[None],
-        mode='markers',
-        marker=dict(
-            size=10,
-            color='rgba(0,0,0,0)',
-            symbol='circle',
-            line=dict(width=0.5, color='black')
-        ),
-        name='Medium capacity',
-        showlegend=True
-    ))
- 
-    fig.add_trace(go.Scattergeo(
-        lon=[None],
-        lat=[None],
-        mode='markers',
-        marker=dict(
-            size=20,
-            color='rgba(0,0,0,0)',
-            symbol='circle',
-            line=dict(width=0.5, color='black')
-        ),
-        name='High capacity',
-        showlegend=True
-    ))
+    fig.add_trace(go.Scattergeo(lon=[None], lat=[None], mode='markers',
+        marker=dict(size=5, color='rgba(0,0,0,0)', symbol='circle', line=dict(width=0.5, color='black')),
+        name='Low capacity', showlegend=True))
+
+    fig.add_trace(go.Scattergeo(lon=[None], lat=[None], mode='markers',
+        marker=dict(size=10, color='rgba(0,0,0,0)', symbol='circle', line=dict(width=0.5, color='black')),
+        name='Medium capacity', showlegend=True))
+
+    fig.add_trace(go.Scattergeo(lon=[None], lat=[None], mode='markers',
+        marker=dict(size=20, color='rgba(0,0,0,0)', symbol='circle', line=dict(width=0.5, color='black')),
+        name='High capacity', showlegend=True))
  
  
     # Add color bar to the legend
-    colorscale = [
-    [0.0, "rgb(0,160,0)"],       # Green
-    [0.5, "rgb(255,165,0)"],     # Orange
-    [1.0, "rgb(220,50,50)"],     # Soft red
-    ]
+    colorscale = [[0.0, "rgb(0,160,0)"], # Green
+    [0.5, "rgb(255,165,0)"],            # Orange
+    [1.0, "rgb(220,50,50)"]]            # Soft red
  
     fig.add_trace(go.Scattergeo(
         lon=[None], lat=[None],  # no real data
@@ -477,7 +449,7 @@ def plot_flow_map(df, ports, imports, lng_import_coords):
                 tickmode="array",
                 orientation = 'h',
                 tickvals=[0, 1],
-                ticktext=["Low", "High"],
+                ticktext=["0%", "100%"],
                 len=0.199,
                 xpad = 0,
                 thicknessmode = 'pixels',
@@ -508,13 +480,6 @@ def plot_flow_map(df, ports, imports, lng_import_coords):
             countrycolor='rgb(180, 200, 230)',
             showcoastlines=True,
             coastlinecolor='rgb(160, 180, 220)',
-
-            # Gray disposition 
-            #landcolor='rgb(200, 200, 200)',  
-            #showcountries=True,            
-            #countrycolor='rgb(169, 169, 169)',  
-            #showcoastlines=True,
-            #coastlinecolor='rgb(128, 128, 128)',
 
             center=dict(lat=50, lon=20),  # Europe-focused
             lataxis=dict(range=[30, 65]),  # N Africa to N Europe
@@ -549,8 +514,8 @@ def convert_to_alpha3(iso2):
         return None
 
 
-def plot_cost_map(input_path, scenario, base_path, geojson_path, save):
-    output_file = os.path.join(base_path, "02_plots", "Costs_Results", f"cost_heatmap_{scenario}.png")
+def plot_cost_map(input_path, scenario, output_path, geojson_path, save):
+    output_file = os.path.join(output_path, "Costs_Results", f"cost_heatmap_{scenario}.png")
 
     with open(geojson_path, 'r', encoding='utf-8') as f:
         custom_geojson = json.load(f)
@@ -630,9 +595,9 @@ def plot_cost_map(input_path, scenario, base_path, geojson_path, save):
      
 
 
-def plot_cost_difference(input_difference, full_scenario_name, scenario, base_path, global_min, global_max, geojson_path, save):
+def plot_cost_difference(input_difference, full_scenario_name, scenario, output_path, global_min, global_max, geojson_path, save):
 
-    output_file = os.path.join(base_path, "02_plots", "Costs_Results", f"cost_difference_heatmap_{scenario}.png")
+    output_file = os.path.join(output_path, "Costs_Results", f"cost_difference_heatmap_{scenario}.png")
     
     with open(geojson_path, 'r', encoding='utf-8') as f:
         custom_geojson = json.load(f) 
