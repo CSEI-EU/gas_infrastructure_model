@@ -68,7 +68,7 @@ def map_config(data_gas_prod, scenarios):
     return config
 
 
-def build_plotly_map(data_gas_prod, world_df, ports_df, region_to_countries, highlight_countries, scenarios, config, output_path, title_plotly, save_output):
+def build_plotly_map(data_gas_prod, world_df, ports_df, region_to_countries, highlight_countries, scenarios, config, connectors, output_path, title_plotly, save_output):
     fig = go.Figure()
 
     for _, row in world_df.iterrows():
@@ -100,6 +100,23 @@ def build_plotly_map(data_gas_prod, world_df, ports_df, region_to_countries, hig
 
     fig.add_trace(go.Scattergeo(lon=ports_df["Longitude"].tolist(), lat=ports_df["Latitude"].tolist(), mode="markers", marker=dict(size=6, color="black"), name="LNG Ports"))
     
+    if connectors:
+        europe_hub_lon = -10
+        europe_hub_lat = 47
+
+        exporters_to_europe = ["USA", "QAT", "DZA", "EGY", "LBY", "TUN", "MAR", "TTO"]
+
+        for iso in exporters_to_europe:
+            g = world_df[world_df["ISO_A3"] == iso]
+            if g.empty:
+                continue
+            centroid = g.geometry.representative_point().iloc[0]
+            fig.add_trace(go.Scattergeo(lon=[centroid.x, europe_hub_lon], lat=[centroid.y, europe_hub_lat], mode="lines", line=dict(color="darkgrey", width=2, dash="dot"), opacity=0.7,showlegend=False))
+
+        fig.add_trace(go.Scattergeo(lon=[europe_hub_lon], lat=[europe_hub_lat], mode="markers", marker=dict(size=8, color="blue"), name="European LNG demand hub"))
+        fig.add_trace(go.Scattergeo(lon=[None], lat=[None], mode="lines", line=dict(color="darkgrey", dash="dot", width=2), name="Indicative LNG supply routes to Europe"))
+
+
     for region_name, isos in region_to_countries.items():
         if region_name not in data_gas_prod['Country'].values:
             continue
@@ -132,6 +149,7 @@ def build_plotly_map(data_gas_prod, world_df, ports_df, region_to_countries, hig
         lat1 = config["scale_lat"] + (np.sqrt(val) / config["global_max_sqrt"]) * config["bar_height_scale"]
 
         fig.add_trace(go.Scattergeo(lon=[config["scale_lon"], config["scale_lon"]], lat=[lat0, lat1], mode="lines", line=dict(color="darkgrey", width=8), showlegend=False))
+        fig.add_trace(go.Scattergeo(lon=[config["scale_lon"] - 2, config["scale_lon"] + 2], lat=[lat1, lat1], mode="lines", line=dict(color="black", width=2), showlegend=False))
         fig.add_trace(go.Scattergeo(lon=[config["scale_lon"] - 15], lat=[lat1], mode="text",text=[f"{human_readable(val)} GWh/a"], showlegend=False, textfont=dict(size=10)))
         
 
@@ -150,5 +168,6 @@ def build_plotly_map(data_gas_prod, world_df, ports_df, region_to_countries, hig
         os.makedirs(output_path, exist_ok=True)
         output_file = os.path.join(output_path, title_plotly)
         fig.write_image(output_file, width=1135, height=800, scale=2)
+        fig.show()
     else:
         fig.show()

@@ -61,8 +61,6 @@ def scenario_pipeline_exclusions(input_excluded_pipelines, pipeline_edges):
 
     return pipeline_status
 
-
-
 def scenario_pipeline_exclusions_RU(input_excluded_pipelines, pipeline_edges):
     excluded_all = build_edges(pd.read_excel(input_excluded_pipelines, sheet_name='2035'))
 
@@ -89,21 +87,11 @@ def plot_map(df_ports, pipelines_df, pipeline_status, year, base_path, save):
     color_map_ports = {'old': 'black', 'upgraded': 'blue', 'new': 'green'}
     for status in ['old', 'upgraded', 'new']:
         ports = df_ports[df_ports['Status'] == status]
-        fig.add_trace(go.Scattergeo(
-            lon=ports['Longitude'],
-            lat=ports['Latitude'],
-            mode='markers',
-            marker=dict(size=6, color=color_map_ports[status], symbol='circle'),
-            name=f'LNG Terminal ({status})'
-        ))
+        fig.add_trace(go.Scattergeo(lon=ports['Longitude'], lat=ports['Latitude'], mode='markers', marker=dict(size=6, color=color_map_ports[status], symbol='circle'), name=f'LNG Terminal ({status})'))
 
     # Pipelines
-    color_map = {
-        'included': 'gray',
-        'excluded_for_all': 'red',
-        'excluded_for_NOR_only': 'purple',
-        'included_in_wRU_only': 'red',
-    }
+    color_map = {'included': 'gray', 'excluded_for_all': 'red',
+                'excluded_for_NOR_only': 'purple', 'included_in_wRU_only': 'red',}
 
     status_name_map = {
         'included': 'Included',
@@ -131,25 +119,15 @@ def plot_map(df_ports, pipelines_df, pipeline_status, year, base_path, save):
         end_lat = row['Target_lat']
 
         if ('RU' in edge or 'Russia' in edge) and ('DE' in edge or 'Germany' in edge):
-
             mid_lon = (start_lon + end_lon) / 2
-            mid_lat = max(start_lat, end_lat) + 5  # push north 
-
+            mid_lat = max(start_lat, end_lat) + 5   
             lons = [start_lon, mid_lon, end_lon]
             lats = [start_lat, mid_lat, end_lat]
-
         else:
             lons = [start_lon, end_lon]
             lats = [start_lat, end_lat]
 
-        fig.add_trace(go.Scattergeo(
-            lon=lons,
-            lat=lats,
-            mode='lines',
-            line=line_style,
-            name=status_name_map.get(status, 'Included'),
-            showlegend=show_legend
-        ))
+        fig.add_trace(go.Scattergeo(lon=lons, lat=lats, mode='lines', line=line_style, name=status_name_map.get(status, 'Included'), showlegend=show_legend))
 
     fig.update_layout(
         geo=dict(
@@ -163,123 +141,20 @@ def plot_map(df_ports, pipelines_df, pipeline_status, year, base_path, save):
             coastlinecolor='rgb(160, 180, 220)',
             center=dict(lat=50, lon=20),
             lataxis=dict(range=[30, 65]),
-            lonaxis=dict(range=[-20, 40]),
-        ),
-        width=900,
-        height=650,
-    )
+            lonaxis=dict(range=[-20, 40]),), width=900, height=650,)
 
     if save:
         fig.write_image(output_path, width=1135, height=800, scale=2)
     else:
         fig.show()
 
-    return fig
-
-
-# Updated function for three subplots 
-def plot_three_years_subplots(df_ports_2021, pipelines_2021, pipeline_status_2021,df_ports_2024, pipelines_2024, pipeline_status_2024,df_ports_2035, pipelines_2035, pipeline_status_2035,base_path, save=False):
     
-    fig = make_subplots(rows=1, cols=3,specs=[[{"type": "scattergeo"}, {"type": "scattergeo"}, {"type": "scattergeo"}]],subplot_titles=("Reference Scenario", "Realized Expansion and Alternative Resilience Scenario", "Planned LNG Expansion Scenario"))
-    
-    color_map_ports = {'old': 'black', 'upgraded': 'blue', 'new': 'green'}
-    color_map_pipelines = {
-        'included': 'gray',
-        'excluded_for_all': 'red',
-        'excluded_for_NOR_only': 'purple',
-        'included_in_wRU_only': 'red',
-    }
-    status_name_map = {
-        'included': 'Included',
-        'excluded_for_all': 'Excluded in all',
-        'excluded_for_NOR_only': 'Disruption from Norway',
-        'included_in_wRU_only': 'Only via TurkStream',
-    }
-
-    def add_traces(df_ports, pipelines_df, pipeline_status, col, show_legend_ports=False, show_legend_pipes=False):
-        # LNG terminals
-        for status in ['old', 'upgraded', 'new']:
-            ports = df_ports[df_ports['Status'] == status]
-            fig.add_trace(go.Scattergeo(
-                lon=ports['Longitude'],
-                lat=ports['Latitude'],
-                mode='markers',
-                marker=dict(size=6, color=color_map_ports[status], symbol='circle'),
-                name=f'LNG Terminal ({status})',
-                showlegend=show_legend_ports
-            ), row=1, col=col)
-        
-        # Pipelines
-        legend_shown = set()
-        for _, row in pipelines_df.iterrows():
-            edge = row['Edge']
-            status = pipeline_status.get(edge, 'included')
-            color = color_map_pipelines.get(status, 'gray')
-
-            show_legend = status not in legend_shown if show_legend_pipes else False
-            legend_shown.add(status)
-
-            line_style = dict(width=2, color=color)
-            if status == 'included_in_wRU_only':
-                line_style['dash'] = 'dot'
-
-            fig.add_trace(go.Scattergeo(
-                lon=[row['Source_lon'], row['Target_lon']],
-                lat=[row['Source_lat'], row['Target_lat']],
-                mode='lines',
-                line=line_style,
-                name=status_name_map.get(status, 'Included'),
-                showlegend=show_legend
-            ), row=1, col=col)
-
-    # Add each year subplot
-    add_traces(df_ports_2021, pipelines_2021, pipeline_status_2021, col=1,show_legend_ports=False, show_legend_pipes=False)
-    add_traces(df_ports_2024, pipelines_2024, pipeline_status_2024, col=2,show_legend_ports=True, show_legend_pipes=True)  
-    add_traces(df_ports_2035, pipelines_2035, pipeline_status_2035, col=3,show_legend_ports=False, show_legend_pipes=False)
-    
-    # Update layout for all subplots
-    for i in range(1, 4):
-        fig.update_layout(**{f'geo{i}' if i>1 else 'geo': dict(
-        scope='europe',
-        projection_type='natural earth',
-        showland=True,
-        landcolor='rgb(220, 230, 250)',
-        showcountries=True,
-        countrycolor='rgb(180, 200, 230)',
-        showcoastlines=True,
-        coastlinecolor='rgb(160, 180, 220)',
-        center=dict(lat=50, lon=20),
-        lataxis=dict(range=[30, 65]),
-        lonaxis=dict(range=[-20, 40]),
-    )})
-        
-    # Update the legend position
-    fig.update_layout(
-        legend=dict(
-            orientation='h',
-            yanchor='bottom',
-            y=-0,
-            xanchor='center',
-            x=0.5,
-            title=None
-        ),
-        width=1600,
-        height=600,
-    )
-
-    if save:
-        output_path = os.path.join(base_path, "02_plots", "base_map_3years.png")
-        fig.write_image(output_path, width=1000, height=400, scale=3)
-    else:
-        fig.show()
-
-    return fig
 
 
 def plot_three_years_2x2(df_ports_2021, pipelines_2021, pipeline_status_2021,
                          df_ports_2024, pipelines_2024, pipeline_status_2024,
                          df_ports_2035, pipelines_2035, pipeline_status_2035,
-                         base_path, save=False):
+                         output_file, save_output):
     """
     2x2 layout:
     - Top row: 2021, 2024
@@ -335,9 +210,26 @@ def plot_three_years_2x2(df_ports_2021, pipelines_2021, pipeline_status_2021,
             if status == 'included_in_wRU_only':
                 line_style['dash'] = 'dot'
 
+
+            start_lon = r['Source_lon']
+            start_lat = r['Source_lat']
+            end_lon = r['Target_lon']
+            end_lat = r['Target_lat']
+
+            if ('RU' in edge or 'Russia' in edge) and ('DE' in edge or 'Germany' in edge):
+                mid_lon = (start_lon + end_lon) / 2
+                mid_lat = max(start_lat, end_lat) + 5  # push north 
+
+                lons = [start_lon, mid_lon, end_lon]
+                lats = [start_lat, mid_lat, end_lat]
+
+            else:
+                lons = [start_lon, end_lon]
+                lats = [start_lat, end_lat]
+
             fig.add_trace(go.Scattergeo(
-                lon=[r['Source_lon'], r['Target_lon']],
-                lat=[r['Source_lat'], r['Target_lat']],
+                lon=lons,
+                lat=lats,
                 mode='lines',
                 line=line_style,
                 showlegend=False
@@ -449,10 +341,8 @@ def plot_three_years_2x2(df_ports_2021, pipelines_2021, pipeline_status_2021,
     )
 
     # --- Save or show ---
-    if save:
-        output_path = os.path.join(base_path, "02_plots", "base_map_2x2.png")
-        fig.write_image(output_path, width=1400, height=1000, scale=3)
+    if save_output:
+        fig.write_image(output_file, width=1400, height=1000, scale=3)
+        fig.show()
     else:
         fig.show()
-
-    return fig
