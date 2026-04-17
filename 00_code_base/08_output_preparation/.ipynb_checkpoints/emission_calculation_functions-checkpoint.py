@@ -3,6 +3,44 @@ import pandas as pd
 
 
 #define functions
+def get_scenario_suffix(scenario):
+    """
+    Converts 'ESR_2026_run_2021' -> '2021'
+    Converts 'ESR_2026_run_2024_plus_no_QA' -> '2024_plus_no_QA'
+    """
+    return scenario.replace('ESR_2026_run_', '', 1)
+
+
+def extract_scenario_names(df_names_demand, df_names_shares):
+    """
+    Extracts scenario names from lists of dataframe names by removing prefixes.
+
+    Parameters:
+    - input_names: list of strings (e.g. ['inputs_ESR_2026_run_2021', ...])
+    - share_names: list of strings (e.g. ['costs_shares_ESR_2026_run_2021', ...])
+
+    Returns:
+    - sorted list of unique scenario names
+    """
+
+    def clean_name(name):
+        if name.startswith('inputs_'):
+            return name.replace('inputs_', '', 1)
+        elif name.startswith('costs_shares_'):
+            return name.replace('costs_shares_', '', 1)
+        return name
+
+    scenarios = set()
+
+    for name in df_names_demand:
+        scenarios.add(clean_name(name))
+
+    for name in df_names_shares:
+        scenarios.add(clean_name(name))
+
+    return sorted(scenarios)
+
+
 def filter_negative_supply(df, commodity_name):
     """
     Filters the DataFrame to a given commodity and removes rows with Supply >= 0.
@@ -159,3 +197,34 @@ def build_emissions_summary(**kwargs):
         records.append(row)
     
     return pd.DataFrame(records).set_index('Scenario')
+
+
+
+def calculate_average_emission_factor_from_totals(scenario, total_emissions_df, demand_df,
+                                                  only_EU=False, dfs_EU_countries=None):
+    """
+    Calculates average upstream emission factor from total emissions and demand.
+    Returns a tuple: (scenario, average_emission_factor)
+    """
+
+    emissions = total_emissions_df.copy()
+    demand = demand_df.copy()
+
+    if only_EU:
+        if dfs_EU_countries is None:
+            raise ValueError("dfs_EU_countries must be provided when only_EU is True.")
+        eu_nodes = dfs_EU_countries[dfs_EU_countries['EU'] == True].index
+        emissions = emissions[emissions['Node'].isin(eu_nodes)]
+        demand = demand[demand['Node'].isin(eu_nodes)]
+
+    # Keep only nodes that exist in both dfs
+    df = demand.merge(emissions[['Node', 'Total_Emissions']], on='Node', how='inner')
+
+    total_emissions = df['Total_Emissions'].sum()
+    total_demand = df['Supply'].sum()
+
+    avg_ef = total_emissions / total_demand if total_demand > 0 else 0
+
+    return scenario, avg_ef
+
+
