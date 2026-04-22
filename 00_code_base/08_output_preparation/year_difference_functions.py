@@ -3,7 +3,7 @@ import pandas as pd
 import os
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from output_visualization_functions import *
+from cost_flow_map_functions import *
 
 
 # To identify if the terminals have increase their capacity or if they are completely new

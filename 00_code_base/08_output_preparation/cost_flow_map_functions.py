@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import plotly.graph_objects as go
 import plotly.express as px
+from plotly.subplots import make_subplots
 import pycountry
 import numpy as np
 
@@ -734,7 +735,6 @@ def plot_bar_chart (df):
 def plot_emission_difference(emissions_df,base_year,base_scenario, path, save): 
     # Calculate the difference in Total_Emissions to the base year 2021
     emissions_df['Emissions_Diff_to_'+base_year] = emissions_df['Total_Emissions'] - emissions_df.loc[emissions_df['Scenario'] == base_scenario, 'Total_Emissions'].values[0]
-    # Set the color for all bars to royal blue
     emissions_df['Color'] = 'royalblue'
 
     # Increase figure width and adjust margins to avoid overlap with legend and fit all numbers
@@ -774,3 +774,48 @@ def plot_emission_difference(emissions_df,base_year,base_scenario, path, save):
     if save:
         output_file = os.path.join(path, "02_plots", "Flow_Results", f"emission_difference_{base_year}.png")
         fig_emissions.write_image(output_file, width=1135, height=800, scale=2)
+
+
+def plot_emission_difference_factors(emissions_df, base_year, base_scenario, path, save):
+    # Calculate emissions difference to base scenario
+    emissions_df['Emissions_Diff_to_'+base_year] = (emissions_df['Total_Emissions'] - emissions_df.loc[emissions_df['Scenario'] == base_scenario, 'Total_Emissions'].values[0])
+    emissions_df['Emissions_Diff_M'] = emissions_df['Emissions_Diff_to_'+base_year] / 1e6
+
+    # Create subplot with secondary axis
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+
+    # Emissions difference
+    fig.add_trace(
+        go.Bar(
+            x=emissions_df['Scenario'],
+            y=emissions_df['Emissions_Diff_M'],
+            name='Emission difference',
+            marker_color='royalblue',
+            text=emissions_df['Emissions_Diff_M'].round(1),
+            textposition='outside'
+        ),
+        secondary_y=False
+    )
+
+    # Emission factor EU
+    fig.add_trace(
+        go.Scatter(x=emissions_df['Scenario'], y=emissions_df['Emission_Factor_EU'], mode='lines+markers', name='Emission factor EU'), secondary_y=True)
+
+    # Emission factor Europe
+    fig.add_trace(
+        go.Scatter(x=emissions_df['Scenario'], y=emissions_df['Emission_Factor_Europe'], mode='lines+markers', name='Emission factor Europe'), secondary_y=True)
+
+    fig.update_layout(title='Difference in Total Emissions Compared to ' + base_year, width=1100, height=650, margin=dict(l=60, r=60, t=60, b=60))
+    fig.update_yaxes(title_text="Emissions Difference (Mt)", secondary_y=False)
+    fig.update_yaxes(title_text="Average Emission Factor (tCO₂e/GWh)", range=[0, 55], secondary_y=True)
+
+    fig.show()
+
+    if save:
+        output_file = os.path.join(
+            path,
+            "02_plots",
+            "Flow_Results",
+            f"emission_difference_{base_year}.png"
+        )
+        fig.write_image(output_file, width=1135, height=800, scale=2)
