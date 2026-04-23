@@ -169,4 +169,4 @@ def build_plotly_map(data_gas_prod, world_df, ports_df, country_points, region_t
     if save_output:
         os.makedirs(output_path, exist_ok=True)
         output_file = os.path.join(output_path, title_plotly)
-        fig.write_image(output_file, width=900, height=650, scale=2)
+        fig.write_image(output_file, width=1135, height=800, scale=2)

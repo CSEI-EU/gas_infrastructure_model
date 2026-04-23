@@ -807,14 +807,13 @@ def plot_emission_difference_factors(emissions_df, base_year, base_scenario, pat
 
     fig.update_layout(title='Difference in Total Emissions Compared to ' + base_year, width=1100, height=650, margin=dict(l=60, r=60, t=60, b=60))
     fig.update_yaxes(title_text="Emissions Difference (Mt)", secondary_y=False)
-    fig.update_yaxes(title_text="Average Emission Factor (tCO₂e/GWh)", range=[0, 55], secondary_y=True)
+    fig.update_yaxes(title_text="Average Emission Factor (tCO₂e/GWh)", range=[0, 58], secondary_y=True)
 
     fig.show()
 
     if save:
         output_file = os.path.join(
             path,
-            "02_plots",
             "Flow_Results",
             f"emission_difference_{base_year}.png"
         )
