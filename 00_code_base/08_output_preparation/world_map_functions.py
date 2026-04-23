@@ -68,7 +68,7 @@ def map_config(data_gas_prod, scenarios):
     return config
 
 
-def build_plotly_map(data_gas_prod, world_df, ports_df, region_to_countries, highlight_countries, scenarios, config, connectors, output_path, title_plotly, save_output):
+def build_plotly_map(data_gas_prod, world_df, ports_df, country_points, region_to_countries, highlight_countries, scenarios, config, connectors, output_path, title_plotly, save_output):
     fig = go.Figure()
 
     for _, row in world_df.iterrows():
@@ -104,17 +104,18 @@ def build_plotly_map(data_gas_prod, world_df, ports_df, region_to_countries, hig
         europe_hub_lon = -10
         europe_hub_lat = 47
 
-        exporters_to_europe = ["USA", "QAT", "DZA", "EGY", "LBY", "TUN", "MAR", "TTO"]
-
-        for iso in exporters_to_europe:
-            g = world_df[world_df["ISO_A3"] == iso]
-            if g.empty:
-                continue
-            centroid = g.geometry.representative_point().iloc[0]
-            fig.add_trace(go.Scattergeo(lon=[centroid.x, europe_hub_lon], lat=[centroid.y, europe_hub_lat], mode="lines", line=dict(color="darkgrey", width=2, dash="dot"), opacity=0.7,showlegend=False))
+        for country, (lon, lat) in country_points.items():
+            fig.add_trace(go.Scattergeo(
+            lon=[lon, europe_hub_lon],
+            lat=[lat, europe_hub_lat],
+            mode="lines",
+            line=dict(color="black", width=1.5, dash="dot"),
+            opacity=0.6,
+            showlegend=False
+        ))
 
         fig.add_trace(go.Scattergeo(lon=[europe_hub_lon], lat=[europe_hub_lat], mode="markers", marker=dict(size=8, color="blue"), name="European LNG demand hub"))
-        fig.add_trace(go.Scattergeo(lon=[None], lat=[None], mode="lines", line=dict(color="darkgrey", dash="dot", width=2), name="Indicative LNG supply routes to Europe"))
+        fig.add_trace(go.Scattergeo(lon=[None], lat=[None], mode="lines", line=dict(color="black", dash="dot", width=1.5), name="Indicative LNG supply routes to Europe"))
 
 
     for region_name, isos in region_to_countries.items():
@@ -157,17 +158,15 @@ def build_plotly_map(data_gas_prod, world_df, ports_df, region_to_countries, hig
         label = "Oceania" if region_name == "Australia" else region_name
         fig.add_trace(go.Scattergeo(lon=[None], lat=[None], mode="markers", marker=dict(size=10, color=color, line=dict(width=0.5, color="grey")),showlegend=True,name=label))
 
-    fig.add_trace(go.Scattergeo(lon=[None], lat=[None], mode="lines", line=dict(color="black", width=1), name="Model nodes (outlined countries)", showlegend=True))
+    fig.add_trace(go.Scattergeo(lon=[None], lat=[None], mode="lines", line=dict(color="black", width=1), name="National Node (individual Subregion)", showlegend=True))
     
     fig.update_geos(showland=True, landcolor='rgb(220, 230, 250)', showcountries=True, countrycolor='rgb(180, 200, 230)', showcoastlines=True, coastlinecolor='rgb(160, 180, 220)',projection_type='equirectangular')
     fig.update_layout(height=800, width=1130, margin={"r": 0, "t": 0, "l": 0, "b": 0},
                         legend=dict(orientation="h", yanchor="bottom", y=0.16, xanchor="center", x=0.5, font=dict(size=10), itemwidth=30, itemsizing="constant", bordercolor="lightgrey", borderwidth=1))  
     
+    fig.show()
 
     if save_output:
         os.makedirs(output_path, exist_ok=True)
         output_file = os.path.join(output_path, title_plotly)
-        fig.write_image(output_file, width=1135, height=800, scale=2)
-        fig.show()
-    else:
-        fig.show()
+        fig.write_image(output_file, width=900, height=650, scale=2)
