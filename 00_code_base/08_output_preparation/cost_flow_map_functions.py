@@ -783,7 +783,6 @@ def plot_emission_difference_factors(emissions_df, base_year, base_scenario, pat
 
     # Create subplot with secondary axis
     fig = make_subplots(specs=[[{"secondary_y": True}]])
-
     # Emissions difference
     fig.add_trace(
         go.Bar(
