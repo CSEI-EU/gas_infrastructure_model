@@ -67,7 +67,6 @@ def map_config(data_gas_prod, scenarios):
 
     return config
 
-
 def build_plotly_map(data_gas_prod, world_df, ports_df, country_points, region_to_countries, highlight_countries, scenarios, config, connectors, output_path, title_plotly, save_output):
     fig = go.Figure()
 
@@ -98,24 +97,45 @@ def build_plotly_map(data_gas_prod, world_df, ports_df, country_points, region_t
                 lon, lat = list(geom.exterior.xy[0]), list(geom.exterior.xy[1])
                 fig.add_trace(go.Scattergeo(lon=lon, lat=lat, mode='lines', line=dict(color=col, width=2), showlegend=False))
 
-    fig.add_trace(go.Scattergeo(lon=ports_df["Longitude"].tolist(), lat=ports_df["Latitude"].tolist(), mode="markers", marker=dict(size=6, color="black"), name="LNG Ports"))
-    
-    if connectors:
-        europe_hub_lon = -10
-        europe_hub_lat = 47
 
-        for country, (lon, lat) in country_points.items():
-            fig.add_trace(go.Scattergeo(
-            lon=[lon, europe_hub_lon],
-            lat=[lat, europe_hub_lat],
-            mode="lines",
-            line=dict(color="black", width=1.5, dash="dot"),
-            opacity=0.6,
+    if not connectors:
+        # Normal case
+        fig.add_trace(go.Scattergeo(
+            lon=ports_df["Longitude"],
+            lat=ports_df["Latitude"],
+            mode="markers",
+            marker=dict(size=6, color="black"),
             showlegend=False
         ))
 
-        fig.add_trace(go.Scattergeo(lon=[europe_hub_lon], lat=[europe_hub_lat], mode="markers", marker=dict(size=8, color="blue"), name="European LNG demand hub"))
-        fig.add_trace(go.Scattergeo(lon=[None], lat=[None], mode="lines", line=dict(color="black", dash="dot", width=1.5), name="Indicative LNG supply routes to Europe"))
+    else:
+        fig.add_trace(go.Scattergeo(
+        lon=ports_df["Longitude"],
+        lat=ports_df["Latitude"],
+        mode="markers",
+        marker=dict(size=6, color="black"),
+        showlegend=False
+    ))
+
+        # Highlight exporters
+        export_lons = []
+        export_lats = []
+
+        for _, (lon, lat) in country_points.items():
+            export_lons.append(lon)
+            export_lats.append(lat)
+
+        fig.add_trace(go.Scattergeo(
+            lon=export_lons,
+            lat=export_lats,
+            mode="markers",
+            marker=dict(
+                size=6,
+                color="red"
+            ),
+            showlegend=False
+        ))
+
 
 
     for region_name, isos in region_to_countries.items():
@@ -138,7 +158,7 @@ def build_plotly_map(data_gas_prod, world_df, ports_df, country_points, region_t
         offsets = np.linspace(-config["bar_spacing"], config["bar_spacing"], len(vals))
         for i, (val, offset) in enumerate(zip(vals_scaled, offsets)):
             fig.add_trace(go.Scattergeo(lon=[x + offset, x + offset], lat=[y, y + val], mode="lines", line=dict(color=config["bar_colors"][i], width=8),
-                                        showlegend=(region_name == list(region_to_countries.keys())[0]),
+                                        showlegend=False,
                                         name=({ "2021": "Reference Scenario", "2024": "Realized Expansion and<br>Alternative resilience scenario",
                                         "2035 High Demand": "Planned LNG Expansion<br>Scenario with the Ap and SP variation"}[scenarios[i]] if (region_name == list(region_to_countries.keys())[0])
                                         else None)))
@@ -152,18 +172,96 @@ def build_plotly_map(data_gas_prod, world_df, ports_df, country_points, region_t
         fig.add_trace(go.Scattergeo(lon=[config["scale_lon"], config["scale_lon"]], lat=[lat0, lat1], mode="lines", line=dict(color="darkgrey", width=8), showlegend=False))
         fig.add_trace(go.Scattergeo(lon=[config["scale_lon"] - 2, config["scale_lon"] + 2], lat=[lat1, lat1], mode="lines", line=dict(color="black", width=2), showlegend=False))
         fig.add_trace(go.Scattergeo(lon=[config["scale_lon"] - 15], lat=[lat1], mode="text",text=[f"{human_readable(val)} GWh/a"], showlegend=False, textfont=dict(size=10)))
-        
+      
 
-    for region_name, color in config["pastel_colors"].items():
-        label = "Oceania" if region_name == "Australia" else region_name
-        fig.add_trace(go.Scattergeo(lon=[None], lat=[None], mode="markers", marker=dict(size=10, color=color, line=dict(width=0.5, color="grey")),showlegend=True,name=label))
 
-    fig.add_trace(go.Scattergeo(lon=[None], lat=[None], mode="lines", line=dict(color="black", width=1), name="National Node (individual Subregion)", showlegend=True))
+
+    scenario_labels = [
+        "Reference Scenario",
+        "Realized Expansion and Alternative resilience scenario",
+        "Planned LNG Expansion Scenario"
+    ]
+
+    region_order = [
+        "Africa", "North America", "South America",
+        "Middle East", "Caspian Region", "Asia",
+        "Russia", "Australia"
+    ]
+
+    region_labels = ["Oceania" if r == "Australia" else r for r in region_order]
+    region_colors = [config["pastel_colors"][r] for r in region_order]
+
+    def legend_marker(name, color, group, size=10):
+        return go.Scattergeo(
+            lon=[None], lat=[None],
+            mode="markers",
+            marker=dict(size=size, color=color, line=dict(width=0.5, color="grey")),
+            name=name,
+            legendgroup=group,
+            showlegend=True
+        )
+
+    def legend_line(name, color, group, width=8):
+        return go.Scattergeo(
+            lon=[None], lat=[None],
+            mode="lines",
+            line=dict(color=color, width=width),
+            name=name,
+            legendgroup=group,
+            showlegend=True
+        )
+
+    # Fix legend by colu,mn and not rows 
+    fig.add_trace(legend_marker("LNG Ports", "black", "col1", 6))
+    fig.add_trace(legend_line(scenario_labels[0], config["bar_colors"][0], "col1"))
+    fig.add_trace(legend_line(scenario_labels[1], config["bar_colors"][1], "col1"))
+    fig.add_trace(legend_line(scenario_labels[2], config["bar_colors"][2], "col1"))
+
+    for i in range(3):
+        fig.add_trace(legend_marker(region_labels[i], region_colors[i], "col2"))
+
+    for i in range(3, 6):
+        fig.add_trace(legend_marker(region_labels[i], region_colors[i], "col3"))
+
+    for i in range(6, 8):
+        fig.add_trace(legend_marker(region_labels[i], region_colors[i], "col4"))
+
+    fig.add_trace(go.Scattergeo(
+        lon=[None], lat=[None],
+        mode="lines",
+        line=dict(color="black", width=2),
+        name="National Node (individual Subregion)",
+        legendgroup="col4",
+        showlegend=True
+    ))
+
+    if connectors:
+        fig.add_trace(go.Scattergeo(
+            lon=[None], lat=[None],
+            mode="markers",
+            marker=dict(size=9, color="red"),
+            name="LNG Exporters",
+            legendgroup="col4",
+            showlegend=True
+        ))
     
     fig.update_geos(showland=True, landcolor='rgb(220, 230, 250)', showcountries=True, countrycolor='rgb(180, 200, 230)', showcoastlines=True, coastlinecolor='rgb(160, 180, 220)',projection_type='equirectangular')
-    fig.update_layout(height=800, width=1130, margin={"r": 0, "t": 0, "l": 0, "b": 0},
-                        legend=dict(orientation="h", yanchor="bottom", y=0.16, xanchor="center", x=0.5, font=dict(size=10), itemwidth=30, itemsizing="constant", bordercolor="lightgrey", borderwidth=1))  
-    
+    fig.update_layout(
+    height=800,
+    width=1130,
+    margin={"r": 0, "t": 0, "l": 0, "b": 0},
+    legend=dict(
+        orientation="h",
+        yanchor="bottom",
+        y=0.16,
+        xanchor="center",
+        x=0.5,
+        font=dict(size=11),
+        tracegroupgap=40,   # creates column spacing
+        bordercolor="lightgrey",
+        borderwidth=1
+    )
+)
     fig.show()
 
     if save_output:
