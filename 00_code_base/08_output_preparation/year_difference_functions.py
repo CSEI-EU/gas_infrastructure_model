@@ -279,7 +279,7 @@ def plot_three_years_2x2(df_ports_2021, pipelines_2021, pipeline_status_2021,
 
     # --- Layout configuration ---
     marker_size = 10
-    text_size = 14
+    text_size = 12
     line_half = 0.012      # line length
     text_offset = 0.05     # text offset (to the right of symbol/line)
     left_col_center = 0.1
@@ -339,6 +339,7 @@ def plot_three_years_2x2(df_ports_2021, pipelines_2021, pipeline_status_2021,
         width=1400,
         height=1000
     )
+    fig.update_layout(font=dict(family="Arial", size=11, color="black"))
 
     # --- Save or show ---
     if save_output:

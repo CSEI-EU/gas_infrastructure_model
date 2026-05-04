@@ -509,6 +509,7 @@ def plot_flow_map(df, ports, imports, lng_import_coords):
             borderwidth=1,
         )
     )
+    fig.update_layout(font=dict(family="Arial", size=11, color="black"))
     fig.show()
     return fig
 
@@ -599,6 +600,7 @@ def plot_cost_map(input_path, scenario, output_path, geojson_path, save):
         width=900,
         height=650
     )
+    fig.update_layout(font=dict(family="Arial", size=11, color="black"))
 
     if save:
         fig.write_image(output_file, width=900, height=650, scale=2)
@@ -693,6 +695,7 @@ def plot_cost_difference(input_difference, full_scenario_name, scenario, output_
         width=900,
         height=650
     )
+    fig.update_layout(font=dict(family="Arial", size=11, color="black"))
 
     if save:
         fig.write_image(output_file, width=900, height=650, scale=3)
@@ -723,6 +726,7 @@ def plot_bar_chart (df):
     )
 
     fig.update_traces(textposition='outside')
+    fig.update_layout(font=dict(family="Arial", size=11, color="black"))
     fig.update_layout(
         yaxis_tickformat=".0%",
         yaxis_range=[0, 1.1],
