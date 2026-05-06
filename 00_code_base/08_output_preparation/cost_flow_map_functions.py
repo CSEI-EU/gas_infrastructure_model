@@ -252,23 +252,23 @@ def country_name_to_code(name):
 
 
 def get_corresponding_scenario(filename):
-    if "outputs_IAEE_2025_run_2024_plus_NO_reduced" in filename:
+    if "outputs_ESR_2026_run_2024_plus_NO_reduced" in filename:
         return "2024_NOR"
-    elif "outputs_IAEE_2025_run_2024_plus_no_USA" in filename:
+    elif "outputs_ESR_2026_run_2024_plus_no_USA" in filename:
         return "2024_USA"
-    elif "outputs_IAEE_2025_run_2024_plus_no_QA" in filename:
+    elif "outputs_ESR_2026_run_2024_plus_no_QA" in filename:
         return "2024_QA"
-    elif "outputs_IAEE_2025_run_2024_with_RU" in filename:
+    elif "outputs_ESR_2026_run_2024_with_RU" in filename:
         return "2024_wRU"
 
-    elif "outputs_IAEE_2025_run_2024_inv" in filename:
+    elif "outputs_ESR_2026_run_2024_inv" in filename:
         return "2024_InvesPipes"
-    elif "outputs_IAEE_2025_run_2024" in filename:
+    elif "outputs_ESR_2026_run_2024" in filename:
         return "2024"
     
-    elif "outputs_IAEE_2025_run_2035_AP" in filename:
+    elif "outputs_ESR_2026_run_2035_AP" in filename:
         return "2035"
-    elif "outputs_IAEE_2025_run_2035_SP" in filename:
+    elif "outputs_ESR_2026_run_2035_SP" in filename:
         return "2035"
 
     else:
@@ -287,7 +287,7 @@ def excluded_pipelines(file_path, sheet_name):
 # To process pipelines with Russia and excluded ones 
 def process_pipelines(df, file_name, input_excluded_pipelines):
     scenario_sheet = get_corresponding_scenario(file_name)
-    scenarios_with_exclusion = ["2024_NOR", "2024_USA", "2024_QA", "2024_wRU", "2024_InvesPipes", "2024", "2035"]
+    scenarios_with_exclusion = ["2024_NOR", "2024_USA", "2024_QA", "2024_wRU", "2024_InvesPipes", "2024"]
 
     if scenario_sheet in scenarios_with_exclusion:
         excluded_df = excluded_pipelines(input_excluded_pipelines, scenario_sheet)
@@ -331,12 +331,12 @@ def flow_color(share):
 
 
 # Final plot of the map
-# Option B
 def plot_flow_map(df, ports, imports, lng_import_coords):
     fig = go.Figure()
 
     # First plot the pipeline flows
     df_pipelines = df[(df['FromType'] == '-') & (df['ToType'] == '-')]
+    has_excluded = df_pipelines['Excluded'].any()
 
     for _, row in df_pipelines.iterrows():
         line_color = 'gray' if row.get('Excluded', False) else flow_color(row['Share'])
@@ -394,10 +394,11 @@ def plot_flow_map(df, ports, imports, lng_import_coords):
             hoverinfo='skip', showlegend=False)) 
 
     # Custom legend (top-right box)
-    legend_x_left  = 0.80  
-    legend_x_right = 0.999
-    legend_y_top   = 0.97
-    legend_y_bot   = 0.65
+    legend_x_left  = 0.79  
+    legend_x_right = 0.991
+    legend_y_top   = 0.96
+
+    legend_y_bot   = 0.65 if not has_excluded else 0.615
     box_pad_x      = 0.015
     box_pad_y      = 0.015
     row_h          = 0.045  
@@ -443,11 +444,32 @@ def plot_flow_map(df, ports, imports, lng_import_coords):
 
         fig.add_shape(type="rect", xref="paper", yref="paper", x0=cx - bar_half_w, x1=cx + bar_half_w,
                 y0=pipe_y - bar_h,  y1=pipe_y + bar_h, fillcolor="black", line=dict(width=0), layer="above")
-        fig.add_annotation(x=cx, y=pipe_y - max_bar_h - 0.01, xref="paper", yref="paper", text=label, showarrow=False, xanchor="center", yanchor="top", font=dict(size=11, color="black"),)
+        fig.add_annotation(x=cx, y=pipe_y - max_bar_h - 0.005, xref="paper", yref="paper", text=label, showarrow=False, xanchor="center", yanchor="top", font=dict(size=11, color="black"),)
 
+
+    if has_excluded:
+        # Position below pipeline capacity section
+        excluded_y = pipe_y - max_bar_h - 0.05
+        # Gray line sample
+        fig.add_shape(
+            type="line", xref="paper", yref="paper",
+            x0=legend_x_left + box_pad_x, x1=legend_x_left + box_pad_x + 0.08,
+            y0=excluded_y, y1=excluded_y,
+            line=dict(color="gray", width=1.3),
+            layer="above",
+        )
+        # Label
+        fig.add_annotation(
+            x=legend_x_left + box_pad_x + 0.09, y=excluded_y,
+            xref="paper", yref="paper",
+            text="Excluded", showarrow=False,
+            xanchor="left", yanchor="middle",
+            font=dict(size=11, color="black")
+        )
 
 
     # Add color bar to the legend
+    colorbar_y = 0.649 if not has_excluded else 0.614
     colorscale = [
         [0.0, "rgb(0,160,0)"],   # Green
         [0.5, "rgb(255,165,0)"], # Orange
@@ -471,12 +493,12 @@ def plot_flow_map(df, ports, imports, lng_import_coords):
                 tickvals=[0, 1],
                 ticktext=["0%", "100%"],
                 tickfont=dict(size=11, color="black", family="Arial"),
-                len=0.199,
+                len=0.2,
                 #xpad=0,
                 thicknessmode='pixels',
                 thickness=10,
-                x=0.999,
-                y=0.649,
+                x=0.991,
+                y=colorbar_y,
                 xanchor='right',
                 yanchor='top',
                 bgcolor='rgba(255, 255, 255, 0.8)',
