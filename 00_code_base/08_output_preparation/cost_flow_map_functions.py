@@ -331,12 +331,13 @@ def flow_color(share):
 
 
 # Final plot of the map
+# Option B
 def plot_flow_map(df, ports, imports, lng_import_coords):
     fig = go.Figure()
- 
+
     # First plot the pipeline flows
     df_pipelines = df[(df['FromType'] == '-') & (df['ToType'] == '-')]
- 
+
     for _, row in df_pipelines.iterrows():
         line_color = 'gray' if row.get('Excluded', False) else flow_color(row['Share'])
         line_width = max(row['Capacity_tot'] / 100000, 1.1) if row['Flow'] > 0 else 1
@@ -356,95 +357,103 @@ def plot_flow_map(df, ports, imports, lng_import_coords):
         else:
             lons = [start_lon, end_lon]
             lats = [start_lat, end_lat]
- 
-        fig.add_trace(go.Scattergeo(locationmode='country names', lon=lons, lat=lats, mode='lines',
-            line=dict(width=line_width, color=line_color,), hoverinfo='skip',showlegend=False))
- 
-    # Port names
-    fig.add_trace(go.Scattergeo(
-        locationmode='country names',
-        lon=ports['Longitude'],
-        lat=ports['Latitude'],
-        mode='markers',
-        marker=dict(
-            size=5,  # Small size
-            color='black',
-            symbol='circle',
-        ),
-        name='LNG terminal',
-        showlegend=True,
-    ))
 
-    fig.add_trace(go.Scattergeo(
-        lon=[None],
-        lat=[None],
-        mode='lines',
-        line=dict(width=2, color='gray'),
-        name='Not included'
-    ))
-
- 
-    # Add LNG import points
-    for country, (lat, lon) in lng_import_coords.items():
-        share_import = imports[imports['From']== country]['Share'].values
-        capacity_import = imports[imports['From']== country]['Capacity_tot'].values
- 
-        # Condition, otherwise it does not work
-        if len(capacity_import) > 0:
-            capacity_import = capacity_import[0]  
-        else:
-            capacity_import = 0
- 
-        if len(share_import) > 0:
-            share_import = share_import[0]  
-        else:
-            share_import = 0
- 
-        color = flow_color(share_import)
-        size = max(10, 0.00005*capacity_import)
- 
         fig.add_trace(go.Scattergeo(
-            lon=[lon],
-            lat=[lat],
-            mode='markers',
-            marker=dict(
-                size=size,  
-                color=color ,  
-                symbol='circle',
-                line=dict(width=0.5, color='black')
-            ),
+            locationmode='country names',
+            lon=lons, lat=lats,
+            mode='lines',
+            line=dict(width=line_width, color=line_color),
             hoverinfo='skip',
             showlegend=False
         ))
- 
-    # Size legend for small, medium, large
-    fig.add_trace(go.Scattergeo(lon=[None], lat=[None], mode='markers',
-        marker=dict(size=5, color='rgba(0,0,0,0)', symbol='circle', line=dict(width=0.5, color='black')),
-        name='Low capacity', showlegend=True))
 
-    fig.add_trace(go.Scattergeo(lon=[None], lat=[None], mode='markers',
-        marker=dict(size=10, color='rgba(0,0,0,0)', symbol='circle', line=dict(width=0.5, color='black')),
-        name='Medium capacity', showlegend=True))
+    # Port names
+    fig.add_trace(go.Scattergeo(locationmode='country names', lon=ports['Longitude'], lat=ports['Latitude'], mode='markers',
+                marker=dict(size=5, color='black', symbol='circle'), name='LNG terminal', showlegend=False,))
 
-    fig.add_trace(go.Scattergeo(lon=[None], lat=[None], mode='markers',
-        marker=dict(size=20, color='rgba(0,0,0,0)', symbol='circle', line=dict(width=0.5, color='black')),
-        name='High capacity', showlegend=True))
+    # Add LNG import points
+    for country, (lat, lon) in lng_import_coords.items():
+        share_import = imports[imports['From'] == country]['Share'].values
+        capacity_import = imports[imports['From'] == country]['Capacity_tot'].values
+
+        if len(capacity_import) > 0:
+            capacity_import = capacity_import[0]
+        else:
+            capacity_import = 0
+
+        if len(share_import) > 0:
+            share_import = share_import[0]
+        else:
+            share_import = 0
+
+        color = flow_color(share_import)
+        size = max(10, 0.00005 * capacity_import)
+
+        fig.add_trace(go.Scattergeo(lon=[lon], lat=[lat], mode='markers',
+            marker=dict(size=size, color=color, symbol='circle', line=dict(width=0.5, color='black')),
+            hoverinfo='skip', showlegend=False)) 
+
+    # Custom legend (top-right box)
+    legend_x_left  = 0.80  
+    legend_x_right = 0.999
+    legend_y_top   = 0.97
+    legend_y_bot   = 0.65
+    box_pad_x      = 0.015
+    box_pad_y      = 0.015
+    row_h          = 0.045  
+
+    # Background box
+    fig.add_shape(type="rect", xref="paper", yref="paper", x0=legend_x_left, x1=legend_x_right,
+        y0=legend_y_bot,  y1=legend_y_top, fillcolor="rgba(255,255,255,0.85)",
+        line=dict(color="rgba(0,0,0,0.8)", width=1), layer="above")
+    
+    fig.add_annotation(x=legend_x_left + box_pad_x, y=legend_y_top - box_pad_y, xref="paper", yref="paper",
+            text="<b>LNG import capacity</b>", showarrow=False, xanchor="left", yanchor="top", font=dict(size=12, color="black"))
+    
+    dot_rows = [("LNG terminal",    5,  "black"), ("Low",    5,  "white"), ("Medium", 10, "white"), ("High",   20, "white"),]
+    dot_x_marker  = legend_x_left + box_pad_x + 0.016
+    dot_x_label   = legend_x_left + box_pad_x + 0.038
+    dot_y_start   = legend_y_top - box_pad_y - row_h
+
+    for i, (label, sz, col) in enumerate(dot_rows):
+        y_row = dot_y_start - i * row_h
+        r = sz * 0.0008 
+        fig.add_shape(type="circle", xref="paper", yref="paper", x0=dot_x_marker - r, x1=dot_x_marker + r,
+                y0=y_row - r, y1=y_row + r, fillcolor=col, line=dict(color="black", width=0.8), layer="above",)
+        fig.add_annotation(x=dot_x_label, y=y_row, xref="paper", yref="paper", text=label, showarrow=False, xanchor="left", yanchor="middle", font=dict(size=11, color="black"))
+
+    # Line to divide
+    divider_y = dot_y_start - len(dot_rows) * row_h + row_h * 0.4
+    fig.add_shape(type="line", xref="paper", yref="paper", x0=legend_x_left + box_pad_x, x1=legend_x_right - box_pad_x,
+            y0=divider_y, y1=divider_y, line=dict(color="rgba(0,0,0,0.3)", width=0.8), layer="above")
 
 
-    fig.add_trace(go.Scattergeo(
-    lon=[None],
-    lat=[None],
-    mode='lines',
-    line=dict(width=0.1, color='rgba(0,0,0,0)'),  # invisible
-    name='Width ∝ capacity',
-    showlegend=True))
- 
- 
+    fig.add_annotation(x=legend_x_left + box_pad_x, y=divider_y - 0.01, xref="paper", yref="paper", text="<b>Pipeline capacity</b>", showarrow=False, xanchor="left", yanchor="top", font=dict(size=12, color="black"))
+
+    pipe_y     = divider_y - 0.01 - row_h * 0.85
+    pipe_items = [("Low", 0.5), ("Med", 2.5), ("High", 5)]
+    pipe_x_start = legend_x_left + box_pad_x + 0.03
+    pipe_x_step  = 0.05  
+    max_bar_h = max(lw / 550 for _, lw in pipe_items)
+
+    for i, (label, lw) in enumerate(pipe_items):
+        cx = pipe_x_start + i * pipe_x_step
+        bar_half_w = 0.015
+        bar_h      = lw / 550   # scale height to paper coords
+
+        fig.add_shape(type="rect", xref="paper", yref="paper", x0=cx - bar_half_w, x1=cx + bar_half_w,
+                y0=pipe_y - bar_h,  y1=pipe_y + bar_h, fillcolor="black", line=dict(width=0), layer="above")
+        fig.add_annotation(x=cx, y=pipe_y - max_bar_h - 0.01, xref="paper", yref="paper", text=label, showarrow=False, xanchor="center", yanchor="top", font=dict(size=11, color="black"),)
+
+
+
     # Add color bar to the legend
-    colorscale = [[0.0, "rgb(0,160,0)"], # Green
-    [0.5, "rgb(255,165,0)"],            # Orange
-    [1.0, "rgb(220,50,50)"]]            # Soft red
- 
+    colorscale = [
+        [0.0, "rgb(0,160,0)"],   # Green
+        [0.5, "rgb(255,165,0)"], # Orange
+        [1.0, "rgb(220,50,50)"]  # Soft red
+    ]
+
     fig.add_trace(go.Scattergeo(
         lon=[None], lat=[None],  # no real data
         mode='markers',
@@ -454,19 +463,20 @@ def plot_flow_map(df, ports, imports, lng_import_coords):
             cmax=1,
             colorbar=dict(
                 title=dict(
-                text="Utilization",
-                side="top"
-                ),
+                text="<b>Utilization</b>",  # Bold title
+                side="top",
+                font=dict(size=12, color="black", family="Arial")),
                 tickmode="array",
-                orientation = 'h',
+                orientation='h',
                 tickvals=[0, 1],
                 ticktext=["0%", "100%"],
+                tickfont=dict(size=11, color="black", family="Arial"),
                 len=0.199,
-                xpad = 0,
-                thicknessmode = 'pixels',
-                thickness = 10,
-                x=0.964,  
-                y=0.735,  
+                #xpad=0,
+                thicknessmode='pixels',
+                thickness=10,
+                x=0.999,
+                y=0.649,
                 xanchor='right',
                 yanchor='top',
                 bgcolor='rgba(255, 255, 255, 0.8)',
@@ -474,33 +484,31 @@ def plot_flow_map(df, ports, imports, lng_import_coords):
                 borderwidth=1,
             ),
             showscale=True,
-            color=[0.5],  
-            size=0.01,    
+            color=[0.5],
+            size=0.01,
         ),
-    showlegend=False,
+        showlegend=False,
     ))
 
-
     fig.update_layout(
-        #title=title,
         geo=dict(
-            scope='world',  # full world, but we control view
+            scope='world',
             projection_type='natural earth',
             showland=True,
             landcolor='rgb(220, 230, 250)',
-            showcountries=True,                 # Shows borders even internal
+            showcountries=True,
             countrycolor='rgb(180, 200, 230)',
             showcoastlines=True,
             coastlinecolor='rgb(160, 180, 220)',
-
-            center=dict(lat=50, lon=20),  # Europe-focused
-            lataxis=dict(range=[30, 65]),  # N Africa to N Europe
-            lonaxis=dict(range=[-20, 40]), # W Europe to Central Asia
+            center=dict(lat=50, lon=20),
+            lataxis=dict(range=[30, 65]),
+            lonaxis=dict(range=[-20, 40]),
         ),
+        margin=dict(l=5, r=5, t=0.5, b=0.5),
         width=900,
         height=650,
         legend=dict(
-            x=0.965,  
+            x=0.965,
             y=1.0,
             xanchor='right',
             yanchor='top',
