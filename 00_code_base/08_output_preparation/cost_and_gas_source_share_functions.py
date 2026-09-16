@@ -287,18 +287,18 @@ def update_edge_costs_to_real_value(df_edges_raw, df_edges_cap_cost_raw, commodi
     # Set multi-index for easier comparison and update
     df2_indexed = df2.set_index(['Source', 'Destination'])
 
-    # Iterate over df1 and update costs_edge where needed
+    # Iterate over df1 and update costs_edge only when it is 999999
     for idx, row in df1.iterrows():
         key = (row['Source'], row['Destination'])
         if key in df2_indexed.index:
-            cost_raw = row['costs_edge']
-            cost_new = df2_indexed.loc[key, 'costs_edge']
-            if cost_raw != cost_new:
+            if row['costs_edge'] == 999999:
+                cost_new = df2_indexed.loc[key, 'costs_edge']
                 df1.at[idx, 'costs_edge'] = cost_new
 
     # Replace updated rows in original df_edges_raw
     df_edges_raw.update(df1)
     return df_edges_raw
+
 
 def load_excel_sheets_by_name(folder_path, substring, sheet_name="cost"):
     # Pattern for finding matching Excel files
